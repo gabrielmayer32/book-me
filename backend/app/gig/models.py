@@ -33,17 +33,35 @@ class Gig(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
     is_recurring = models.BooleanField(default=False)
     recurring_days = models.ManyToManyField('DayOfWeek', blank=True, related_name='gigs')
-    date = models.DateField(null=True, blank=True)  # Optional date field for non-recurring gigs
-    start_time = models.TimeField(null=True, blank=True)  # Added start_time field
-    end_time = models.TimeField(null=True, blank=True)  # Added end_time field
+    date = models.DateField(null=True, blank=True)
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
+    latitude = models.FloatField(null=True, blank=True)  # New field for latitude
+    longitude = models.FloatField(null=True, blank=True)  
 
     def save(self, *args, **kwargs):
-        # Indicates if the object is being created for the first time
         is_new = self._state.adding
-        super(Gig, self).save(*args, **kwargs)  # Call the "real" save method.
+        super(Gig, self).save(*args, **kwargs)  # Call the "real" save method first to ensure the gig is saved
         
-        if is_new and self.is_recurring:
-            self.create_gig_instances()
+        if is_new:
+            # Check if the gig is new to avoid creating duplicate instances for existing gigs
+            if self.is_recurring:
+                # If the gig is recurring, calculate and create multiple gig instances
+                self.create_gig_instances()
+            else:
+                # For non-recurring gigs, create a single gig instance with the provided date
+                self.create_single_gig_instance()
+
+    def create_single_gig_instance(self):
+        """Create a single gig instance for non-recurring gigs."""
+        if self.date:
+            # Only create an instance if a specific date is provided for the gig
+            GigInstance.objects.create(
+                gig=self,
+                date=self.date,
+                start_time=self.start_time,
+                end_time=self.end_time
+            )
 
     def calculate_gig_dates(self):
         """
@@ -95,9 +113,16 @@ class GigInstance(models.Model):
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
     is_booked = models.BooleanField(default=False)
-    
+    bookings = models.PositiveIntegerField(default=0)  # Track the number of bookings
+
     class Meta:
-        unique_together = ['gig', 'date', 'start_time']  # Ensure each instance is unique
+        unique_together = ['gig', 'date', 'start_time']
+    
+    @property
+    def remaining_slots(self):
+        """Calculate the remaining slots for the gig instance."""
+        return max(0, self.gig.max_people - self.bookings)
+
 
     def __str__(self):
         return f" User : {self.gig.provider.first_name} - {self.gig.title} - {self.date} ({self.start_time} - {self.end_time})"

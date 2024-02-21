@@ -26,6 +26,11 @@ from rest_framework import serializers
 from .models import GigInstance
 
 class GigInstanceSerializer(serializers.ModelSerializer):
+    remaining_slots = serializers.SerializerMethodField()
+
     class Meta:
         model = GigInstance
-        fields = ['gig', 'date', 'start_time', 'end_time', 'is_booked']
+        fields = ['gig', 'date', 'start_time', 'end_time', 'is_booked', 'remaining_slots']
+    def get_remaining_slots(self, obj):
+        """Returns the number of remaining slots for the gig instance."""
+        return obj.remaining_slots

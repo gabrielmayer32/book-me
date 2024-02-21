@@ -32,7 +32,6 @@ const handleLogin = async () => {
         // Navigate without passing userInfo
         navigation.navigate(result.user.isProvider ? 'ProviderDashboard' : 'Home');
         
-        ProviderGigs
       } else  {
         // Handle login failure
         alert(result.message);

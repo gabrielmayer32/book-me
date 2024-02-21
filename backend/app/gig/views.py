@@ -26,36 +26,45 @@ from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, timedelta
 from .models import GigInstance
 from django.conf import settings
+from datetime import datetime, timedelta
+import googlemaps
 
 class UpcomingGigsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         provider_id = kwargs.get('provider_id')
-        User = get_user_model() 
-        provider = get_object_or_404(User, pk=provider_id)  
-
-        if request.user != provider:
-            return Response({'error': 'You do not have permission to view these gigs.'}, status=403)
+        User = get_user_model()
+        provider = get_object_or_404(User, pk=provider_id)
 
         today = datetime.today().date()
         three_months_later = today + timedelta(days=90)
 
-        gigs = GigInstance.objects.filter(
-            gig__provider=provider,
-            date__range=[today, three_months_later],
-            is_booked=False
-        ).order_by('date', 'start_time')
+        gigs = GigInstance.objects.filter(gig__provider=provider, date__range=[today, three_months_later], is_booked=False).order_by('date', 'start_time')
 
-        gigs_data = [{
-            'id': gig.id,
-            'title': gig.gig.title,
-            'description': gig.gig.description,
-            'date': gig.date,
-            'start_time': gig.start_time,
-            'end_time': gig.end_time,
-            'is_booked': gig.is_booked,
-        } for gig in gigs]
+        # Initialize Google Maps client
+        gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)  # Make sure to store your API key securely
+
+        gigs_data = []
+        for gig in gigs:
+            location = {'lat': gig.gig.latitude, 'lng': gig.gig.longitude}
+            # Fetch address from Google Maps
+            reverse_geocode_result = gmaps.reverse_geocode(location)
+            address = reverse_geocode_result[0]['formatted_address'] if reverse_geocode_result else None
+
+            gigs_data.append({
+                'id': gig.id,
+                'title': gig.gig.title,
+                'description': gig.gig.description,
+                'date': gig.date,
+                'start_time': gig.start_time,
+                'end_time': gig.end_time,
+                'is_booked': gig.is_booked,
+                'remaining_slots': gig.remaining_slots,
+                'latitude': gig.gig.latitude,
+                'longitude': gig.gig.longitude,
+                'address': address,
+            })
 
         return Response(gigs_data)
 

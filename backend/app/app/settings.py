@@ -126,3 +126,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # myproject/settings.py
 AUTH_USER_MODEL = 'accounts.CustomUser'
+
+GOOGLE_MAPS_API_KEY = 'AIzaSyCNr1_OZER2ubPmrf_1iSPLtdE1u5by0Xs'
