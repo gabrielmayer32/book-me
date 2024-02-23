@@ -26,11 +26,11 @@ const handleLogin = async () => {
       await AsyncStorage.setItem('csrfToken', csrfToken); 
 
       const result = await response.json();
-
+      console.log(result);
       if (result.success && result.user) {
         setUserInfo(result.user); // Set userInfo in global context
-        // Navigate without passing userInfo
-        navigation.navigate(result.user.isProvider ? 'ProviderDashboard' : 'Home');
+        // await AsyncStorage.setItem('user', csrfToken); 
+        navigation.navigate(result.user.isProvider ? 'ProviderDashboard' : 'HomeTabs');
         
       } else  {
         // Handle login failure

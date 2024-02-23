@@ -3,8 +3,8 @@ from accounts.models import CustomUser  # Or your custom user model
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Gig
-from .serializers import GigSerializer
+from .models import Booking, Gig
+from .serializers import BookingSerializer, GigSerializer
 
 
 from rest_framework import status
@@ -27,7 +27,64 @@ from datetime import datetime, timedelta
 from .models import GigInstance
 from django.conf import settings
 from datetime import datetime, timedelta
-import googlemaps
+from django.utils import timezone
+
+class CancelBookingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, booking_id):
+        booking = get_object_or_404(Booking, id=booking_id)
+
+        # Ensure that users can only cancel their own bookings or providers can cancel any bookings for their gigs
+        if booking.user != request.user and booking.gig_instance.gig.provider != request.user:
+            return Response({'error': 'You do not have permission to cancel this booking.'}, status=403)
+
+        # Here you could also update the booking status to "Cancelled" instead of deleting
+        booking.delete()
+
+        return Response({'message': 'Booking cancelled successfully.'})
+
+
+class UserBookingsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        # Ensure that users can only access their own bookings
+        if request.user.id != user_id and not request.user.is_staff:
+            return Response({'error': 'You do not have permission to view these bookings.'}, status=403)
+
+        bookings = Booking.objects.filter(user_id=user_id).order_by('-booked_on')
+        
+        serializer = BookingSerializer(bookings, many=True)
+        print(serializer.data)
+        return Response(serializer.data)
+
+class BookGigView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        gig_instance_id = request.data.get('gig_instance_id')
+        number_of_slots = request.data.get('number_of_slots')
+        
+        gig_instance = GigInstance.objects.get(id=gig_instance_id)
+        if gig_instance.is_fully_booked:
+            return Response({'error': 'This gig is fully booked.'}, status=400)
+
+        booking = Booking.objects.create(
+            user=request.user,
+            gig_instance=gig_instance,
+            number_of_slots=number_of_slots,
+            status=Booking.StatusChoices.PENDING 
+
+        )
+
+        return Response({'message': 'Booking successful.', 'booking_id': booking.id})
+from django.utils import timezone
+from django.db.models import ExpressionWrapper, F, DateTimeField
+
+from django.utils import timezone
+import pytz
+from datetime import datetime
 
 class UpcomingGigsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -37,36 +94,42 @@ class UpcomingGigsView(APIView):
         User = get_user_model()
         provider = get_object_or_404(User, pk=provider_id)
 
-        today = datetime.today().date()
-        three_months_later = today + timedelta(days=90)
+        now = timezone.now()
+        three_months_later = now.date() + timedelta(days=90)
 
-        gigs = GigInstance.objects.filter(gig__provider=provider, date__range=[today, three_months_later], is_booked=False).order_by('date', 'start_time')
+        # First, get IDs of gigs that the user has already booked
+        user_booked_gig_instance_ids = Booking.objects.filter(
+            user=request.user
+        ).values_list('gig_instance_id', flat=True)
 
-        # Initialize Google Maps client
-        gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)  # Make sure to store your API key securely
+        potential_gigs = GigInstance.objects.filter(
+            gig__provider=provider,
+            date__range=[now.date(), three_months_later]
+        ).exclude(
+            id__in=user_booked_gig_instance_ids  # Exclude gigs the user has already booked
+        ).order_by('date', 'start_time')
 
-        gigs_data = []
-        for gig in gigs:
-            location = {'lat': gig.gig.latitude, 'lng': gig.gig.longitude}
-            # Fetch address from Google Maps
-            reverse_geocode_result = gmaps.reverse_geocode(location)
-            address = reverse_geocode_result[0]['formatted_address'] if reverse_geocode_result else None
+        gigs = [
+            gig for gig in potential_gigs
+            if gig.remaining_slots > 0 and datetime.combine(gig.date, gig.start_time, tzinfo=pytz.UTC) > now
+        ]
 
-            gigs_data.append({
-                'id': gig.id,
-                'title': gig.gig.title,
-                'description': gig.gig.description,
-                'date': gig.date,
-                'start_time': gig.start_time,
-                'end_time': gig.end_time,
-                'is_booked': gig.is_booked,
-                'remaining_slots': gig.remaining_slots,
-                'latitude': gig.gig.latitude,
-                'longitude': gig.gig.longitude,
-                'address': address,
-            })
+        gigs_data = [{
+            'id': gig.id,
+            'title': gig.gig.title,
+            'description': gig.gig.description,
+            'date': gig.date,
+            'start_time': gig.start_time.strftime("%H:%M"),  # Adjust formatting as needed
+            'end_time': gig.end_time.strftime("%H:%M"),  # Adjust formatting as needed
+            'is_booked': gig.is_booked,
+            'remaining_slots': gig.remaining_slots,
+            'latitude': gig.gig.latitude,
+            'longitude': gig.gig.longitude,
+            'address': gig.gig.address,
+        } for gig in gigs]
 
         return Response(gigs_data)
+
 
 
 class CreateGigView(APIView):

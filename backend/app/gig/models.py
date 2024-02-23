@@ -36,26 +36,23 @@ class Gig(models.Model):
     date = models.DateField(null=True, blank=True)
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
-    latitude = models.FloatField(null=True, blank=True)  # New field for latitude
+    latitude = models.FloatField(null=True, blank=True)  
     longitude = models.FloatField(null=True, blank=True)  
+    address = models.CharField(max_length=255, null=True, blank=True)  
 
     def save(self, *args, **kwargs):
         is_new = self._state.adding
-        super(Gig, self).save(*args, **kwargs)  # Call the "real" save method first to ensure the gig is saved
+        super(Gig, self).save(*args, **kwargs)  
         
         if is_new:
-            # Check if the gig is new to avoid creating duplicate instances for existing gigs
             if self.is_recurring:
-                # If the gig is recurring, calculate and create multiple gig instances
                 self.create_gig_instances()
             else:
-                # For non-recurring gigs, create a single gig instance with the provided date
                 self.create_single_gig_instance()
 
     def create_single_gig_instance(self):
         """Create a single gig instance for non-recurring gigs."""
         if self.date:
-            # Only create an instance if a specific date is provided for the gig
             GigInstance.objects.create(
                 gig=self,
                 date=self.date,
@@ -107,6 +104,8 @@ class Gig(models.Model):
 
 from django.db import models
 
+
+
 class GigInstance(models.Model):
     gig = models.ForeignKey(Gig, on_delete=models.CASCADE, related_name='instances')
     date = models.DateField()
@@ -114,15 +113,19 @@ class GigInstance(models.Model):
     end_time = models.TimeField(null=True, blank=True)
     is_booked = models.BooleanField(default=False)
     bookings = models.PositiveIntegerField(default=0)  # Track the number of bookings
-
+    
     class Meta:
         unique_together = ['gig', 'date', 'start_time']
     
     @property
     def remaining_slots(self):
         """Calculate the remaining slots for the gig instance."""
-        return max(0, self.gig.max_people - self.bookings)
+        total_booked_slots = sum(booking.number_of_slots for booking in self.gig_bookings.all())
+        return max(0, self.gig.max_people - total_booked_slots)
 
+    @property
+    def is_fully_booked(self):
+        return self.remaining_slots <= 0
 
     def __str__(self):
         return f" User : {self.gig.provider.first_name} - {self.gig.title} - {self.date} ({self.start_time} - {self.end_time})"
@@ -130,3 +133,17 @@ from datetime import timedelta
 import logging
 logger = logging.getLogger(__name__)
 
+class Booking(models.Model):
+    class StatusChoices(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        ACCEPTED = 'accepted', 'Accepted'
+        DECLINED = 'declined', 'Declined'
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bookings')
+    gig_instance = models.ForeignKey('GigInstance', on_delete=models.CASCADE, related_name='gig_bookings')
+    booked_on = models.DateTimeField(auto_now_add=True)
+    number_of_slots = models.PositiveIntegerField()
+    status = models.CharField(max_length=10, choices=StatusChoices.choices, default=StatusChoices.PENDING)
+
+    def __str__(self):
+        return f"{self.user.username} booked {self.number_of_slots} slots for {self.gig_instance.gig.title} on {self.booked_on.strftime('%Y-%m-%d')} - {self.status}"

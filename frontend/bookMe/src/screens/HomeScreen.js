@@ -5,13 +5,84 @@ import useFetch from '../../utils/useFetch';
 import CustomTopBar from '../components/CustomBar';
 import ScreenLayout from '../components/ScreenLayout'; // Adjust the import path as necessary
 import { act } from 'react-test-renderer';
+import { useUser } from '../UserContext';
+import axios from 'axios';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
+
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const { data, isLoading, error } = useFetch('http://127.0.0.1:8000/accounts/providers/');
   console.log(data);
-  if (isLoading) return <ScreenLayout title="Loading..."><Text>Loading...</Text></ScreenLayout>;
-  if (error) return <ScreenLayout title="Error"><Text>Error: {error}</Text></ScreenLayout>;
+  const [weather, setWeather] = useState({ temp: null, icon: null });
+  
+    const getWeatherIcon = (iconCode) => {
+      const mapping = {
+        '01d': 'weather-sunny',
+        '01n': 'weather-night',
+        '02d': 'weather-partly-cloudy',
+        '02n': 'weather-night-partly-cloudy',
+        '03d': 'weather-cloudy',
+        '03n': 'weather-cloudy',
+        '04d': 'weather-cloudy',
+        '04n': 'weather-cloudy',
+        '09d': 'weather-rainy',
+        '09n': 'weather-rainy',
+        '10d': 'weather-pouring',
+        '10n': 'weather-pouring',
+        '11d': 'weather-lightning',
+        '11n': 'weather-lightning',
+        '13d': 'weather-snowy',
+        '13n': 'weather-snowy',
+        '50d': 'weather-fog',
+        '50n': 'weather-fog',
+      };
+    
+      return mapping[iconCode] || 'weather-sunny'; // Default to 'weather-sunny' if no match is found
+    };
+
+    const { userInfo } = useUser();
+    const userName = userInfo?.firstName || 'User';
+
+    const fetchWeather = async () => {
+
+      
+      const apiKey = '32cd2bacbb63068b58a349971751f5ba';
+      // Use trip details for latitude and longitude
+      const lat = -20.348404
+      const lon = 57.552152
+      console.log(`Fetching weather for ${lat}, ${lon}`);
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+      // const url = 'https://api.openweathermap.org/data/2.5/weather?lat=-20.33&lon=57.38&appid=32cd2bacbb63068b58a349971751f5ba&units=metric';
+      console.log(url);
+      // console.log(url_bis);
+      try {
+        const response = await axios.get(url);
+        console.log(response);
+        console.log(response.data);
+        var { temp } = response.data.main;
+        temp = temp.toFixed(0);
+        const icon = response.data.weather[0].icon;
+        setWeather({ temp, icon });
+      } catch (error) {
+        console.error('Error fetching weather:', error);
+      }
+    };
+
+    const greeting = () => {
+      const hour = new Date().getHours();
+      console.log(hour);
+      if (hour < 12) return 'Good morning';
+      if (hour < 18) return 'Good afternoon';
+      return 'Good evening';
+    };
+
+
+    useEffect(() => {
+      console.log(userInfo);
+      fetchWeather();
+    }, [userInfo]);
 
   const handlePress = (item) => {
     // Assuming item.socials is an array of { platform, url, icon }
@@ -27,8 +98,28 @@ const HomeScreen = () => {
     });
   };
 
+  if (isLoading) return <ScreenLayout title="Loading..."><Text>Loading...</Text></ScreenLayout>;
+  if (error) return <ScreenLayout title="Error"><Text>Error: {error}</Text></ScreenLayout>;
+
+
   return (
-    <ScreenLayout title="Home">
+    <View>
+      <Text style={styles.collaboratorsTitle}>{`${greeting()}, ${userName} `}</Text>
+                <View style={styles.weatherContainer}>
+                {weather.temp && (
+        <View style={{ flexDirection: 'row', marginLeft:10, alignItems: 'center' }}>
+          {weather.icon && (
+            <Icon
+            name={getWeatherIcon(weather.icon)}
+            size={24} // You can adjust the size as needed
+            color="#000" // You can adjust the color as needed
+          />
+          )}
+          <Text style={styles.weatherText}>{` | ${weather.temp}°C`}  </Text>
+
+        </View>
+      )}
+                  </View>
       <Image source={require('../../assets/images/1.jpg')} style={styles.topImage} />
       <Text style={styles.collaboratorsTitle}>Our Collaborators</Text>
       <FlatList
@@ -46,7 +137,7 @@ const HomeScreen = () => {
           </TouchableOpacity>
         )}
       />
-    </ScreenLayout>
+    </View>
   );
 };
   

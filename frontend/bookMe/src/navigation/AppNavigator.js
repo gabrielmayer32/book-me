@@ -10,6 +10,7 @@ import LoginScreen from '../screens/LoginScreen';
 import ProviderDashboard from '../screens/ProviderDashboardScreen';
 import CalendarScreen from '../screens/CalendarScreen';
 import ProviderGigScreen from '../screens/ProviderGigScreen';
+import AppTabs from '../components/AppsTabs';
 
 const Stack = createStackNavigator();
 
@@ -18,7 +19,8 @@ function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="HomeTabs" component={AppTabs} />
+
         <Stack.Screen name="ProfileDetails" component={ProfileDetailScreen} />
         <Stack.Screen name="ProviderDashboard" component={ProviderDashboard} />
         <Stack.Screen name="ProviderGigs" component={ProviderGigScreen} />
