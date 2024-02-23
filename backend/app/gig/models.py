@@ -25,7 +25,7 @@ from datetime import datetime
 class Gig(models.Model):
     title = models.CharField(max_length=255)
     provider = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='gigs')
-    category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, related_name='gigs')
+    category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='gigs')
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     max_people = models.PositiveIntegerField()

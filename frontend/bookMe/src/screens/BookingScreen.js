@@ -4,18 +4,27 @@ import { useUser } from '../UserContext';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import moment from 'moment'; // Import moment
-
-
+import { Menu, Provider } from 'react-native-paper';
+import { Alert } from 'react-native';
+import BookingItem from '../components/BookingItem';
 
 const BookingsScreen = () => {
     const { userInfo } = useUser();
     const [bookings, setBookings] = useState([]);
+    const [menuVisible, setMenuVisible] = useState(false);
 
     useEffect(() => {
         const fetchBookings = async () => {
             try {
+                // Adjust this URL to match your API endpoint
                 const response = await axios.get(`http://127.0.0.1:8000/gig/bookings/user/${userInfo.id}/`);
-                setBookings(response.data);
+                const adjustedBookings = response.data.map(booking => ({
+                    ...booking,
+                    // Adjust start and end time by adding 4 hours to each
+                    gig_start_time: moment(booking.gig_start_time, 'HH:mm').add(4, 'hours').format('HH:mm'),
+                    gig_end_time: moment(booking.gig_end_time, 'HH:mm').add(4, 'hours').format('HH:mm'),
+                }));
+                setBookings(adjustedBookings);
             } catch (error) {
                 console.error('Failed to fetch bookings:', error);
             }
@@ -40,8 +49,9 @@ const BookingsScreen = () => {
         Linking.openURL(url).catch(err => console.error('An error occurred', err));
     };
 
-    const StatusIndicator = ({ status }) => {
+    const getStatusColor = ({ status }) => {
         let backgroundColor;
+        console.log(status);
         switch (status) {
           case 'pending':
             backgroundColor = 'orange';
@@ -56,12 +66,10 @@ const BookingsScreen = () => {
             backgroundColor = 'grey';
         }
       
-        return (
-          <View style={[styles.statusContainer, { borderColor: backgroundColor }]}>
-            <Text style={{ color: backgroundColor }}>{status.toUpperCase()}</Text>
-          </View>
-        );
+        return backgroundColor;
       };
+
+    
 
     return (
         <View style={styles.container}>
@@ -69,37 +77,17 @@ const BookingsScreen = () => {
                 data={bookings}
                 keyExtractor={item => item.id.toString()}
                 renderItem={({ item }) => (
-                    <View style={styles.bookingItem}>
-                        <Text style={styles.bookingTitle}>{item.gig_title} </Text>
-                        <View style={styles.detailRow}>
-                        <Icon name="calendar" size={20} color="#4F8EF7" />
-
-                        <Text>
-                        {`${moment(item.gig_date).format('LL')}`}
-                        </Text>
-                        </View>
-                        <View style={styles.detailRow}>
-                        <Icon name="clock" size={20} color="#4F8EF7" />
-
-                        <Text>
-                        {`${moment(item.gig_start_time, 'HH:mm').format('LT')} - ${moment(item.gig_end_time, 'HH:mm').format('LT')}`}
-                        </Text>
-                        </View>
-                        
-                        <StatusIndicator status={item.status} />
-                        <View style={styles.actions}>
-                        <TouchableOpacity onPress={() => handleCancelBooking(item.id)}>
-                            <Icon name="cancel" size={24} color="red" />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => handleNavigateToLocation(item.latitude, item.longitude)}>
-                            <Icon name="map-marker" size={24} color="blue" />
-                        </TouchableOpacity>
-                        </View>
-                    </View>
-                    
+                    <BookingItem
+                        item={item}
+                        handleNavigateToLocation={handleNavigateToLocation}
+                        handleCancelBooking={handleCancelBooking}
+                    />
                 )}
             />
+            
         </View>
+                    
+      
     );
 };
 
@@ -109,6 +97,10 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingTop: 10,
     },
+    detailText: {
+        marginLeft: 8, // Adjust spacing
+        fontSize: 14, // Increase readability
+    },
     statusContainer: {
         marginTop: 5,
         borderWidth: 1,
@@ -116,6 +108,7 @@ const styles = StyleSheet.create({
         paddingVertical: 2,
         paddingHorizontal: 5,
         alignSelf: 'flex-start',
+        marginLeft: 8,
       },
       detailRow: {
         flexDirection: 'row',
@@ -129,6 +122,7 @@ const styles = StyleSheet.create({
     },
     bookingTitle: {
         fontWeight: 'bold',
+        fontSize: 16,
     },
     actions: {
         flexDirection: 'row',
@@ -148,6 +142,44 @@ const styles = StyleSheet.create({
       fontWeight: 'bold',
       marginVertical: 10,
       marginLeft: 10, // For some spacing from the screen edge
+    },
+
+    bookingItem: {
+        flexDirection: 'column',
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
+    },
+    bookingTitle: {
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    profilePic: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        position: 'absolute',
+        top: 10,
+        right: 10,
+    },
+    moreIcon : {
+        position: 'absolute',
+        top: 0,
+        right: 5,
+    },
+    statusIndicator: {
+        borderWidth: 1,
+        borderRadius: 5,
+        padding: 5,
+        alignSelf: 'flex-start',
+        position: 'absolute',
+        bottom: 10,
+        right: 10,
+    },
+    details: {
+        marginTop: 10,
+        flexDirection: 'column',
+        justifyContent: 'space-between',
     },
 
 });

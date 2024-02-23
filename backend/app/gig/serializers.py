@@ -18,10 +18,11 @@ class BookingSerializer(serializers.ModelSerializer):
     provider_name = serializers.ReadOnlyField(source='gig_instance.gig.provider.fist_name')
     latitude = serializers.ReadOnlyField(source='gig_instance.gig.latitude')
     longitude = serializers.ReadOnlyField(source='gig_instance.gig.longitude')
+    provider_profile_picture = serializers.ImageField(max_length=None, use_url=True, allow_null=True, required=False)
 
     class Meta:
         model = Booking
-        fields = ['id', 'gig_title', 'gig_date', 'gig_start_time', 'gig_end_time', 'provider_name', 'booked_on', 'number_of_slots', 'status', 'latitude', 'longitude']
+        fields = ['id', 'gig_title', 'gig_date', 'gig_start_time', 'gig_end_time', 'provider_name', 'booked_on', 'number_of_slots', 'status', 'latitude', 'longitude', 'provider_profile_picture']
         # Include any other fields you think are necessary for the frontend.
 
 
