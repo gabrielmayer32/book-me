@@ -9,7 +9,7 @@ import GigCard from '../components/GigCard';
 import { Picker } from '@react-native-picker/picker';
 
 const ProfileDetailsScreen = ({ route }) => {
-  const { providerId, firstName, activity, age, phoneNumber, socials, profileImageUrl } = route.params;
+  const { providerId, businessName, activity, age, phoneNumber, socials, profileImageUrl } = route.params;
   const [upcomingGigs, setUpcomingGigs] = useState([]);
   const [isBookingModalVisible, setBookingModalVisible] = useState(false);
   const [selectedSlots, setSelectedSlots] = useState(1);
@@ -70,7 +70,7 @@ const ProfileDetailsScreen = ({ route }) => {
           'X-CSRFToken': csrfToken,
         },
       });
-
+      
       if (!response.ok) {
         throw new Error('Failed to fetch upcoming gigs');
       }
@@ -156,8 +156,8 @@ const ProfileDetailsScreen = ({ route }) => {
       <View style={styles.container}>
         {/* <Card style={styles.card}> */}
           {/* <Card.Content> */}
-            <Image source={{ uri: profileImageUrl }} style={styles.profileImage} />
-            <Text style={styles.name}>{firstName}, {age}</Text>
+          <Image source={{ uri: profileImageUrl }} style={styles.profileImage} />
+            <Text style={styles.name}>{businessName} </Text>
             <Text style={styles.bio}>{activity}</Text>
             
             <View style={styles.detailRow}>
@@ -342,11 +342,12 @@ const styles = StyleSheet.create({
     maxWidth: 360,
   },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 60,
+    width: 100, // Set the width
+    height: 100, // Ensure the height is the same as the width for a perfect circle
+    borderRadius: 50, // Half the width and height to make a perfect circle
     alignSelf: 'center',
     marginBottom: 16,
+    resizeMode: 'cover', // Cover, contain, stretch, or center
   },
   name: {
     fontSize: 24,

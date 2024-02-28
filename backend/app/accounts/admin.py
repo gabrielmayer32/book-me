@@ -7,13 +7,13 @@ class CustomUserAdmin(BaseUserAdmin):
     model = CustomUser
     # Fieldsets for viewing and editing an existing user (None represents the title of the fieldset)
     fieldsets = BaseUserAdmin.fieldsets + (
-        (_('Personal info'), {'fields': ('bio', 'activity', 'phone_number', 'profile_picture', 'is_provider')}),
+        (_('Personal info'), {'fields': ('bio', 'activity', 'phone_number', 'profile_picture', 'business_name', 'is_provider')}),
     )
     # Fieldsets for creating a new user
     add_fieldsets = BaseUserAdmin.add_fieldsets + (
-        (_('Personal info'), {'fields': ('bio', 'activity', 'phone_number', 'profile_picture', 'is_provider',)}),
+        (_('Personal info'), {'fields': ('bio', 'activity', 'phone_number', 'profile_picture','business_name',  'is_provider',)}),
     )
-    list_display = ['username', 'email', 'is_provider', 'is_staff']  # Customizes the columns in the admin user list
+    list_display = ['username', 'email', 'is_provider', 'business_name', 'is_staff']  # Customizes the columns in the admin user list
 
 # Register the admin model
 admin.site.register(CustomUser, CustomUserAdmin)

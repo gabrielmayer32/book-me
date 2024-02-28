@@ -52,8 +52,21 @@ class UserBookingsView(APIView):
         user_id = self.kwargs.get('user_id')
         if request.user.id != int(user_id) and not request.user.is_staff:
             return Response({'error': 'You do not have permission to view these bookings.'}, status=403)
+        
+        # Get the current date and time
+        now = timezone.now()
 
-        bookings = Booking.objects.filter(user_id=user_id).order_by('-booked_on')
+        # Filter bookings to exclude those with gig instances in the past
+        # This comparison checks both the date and the time
+        bookings = Booking.objects.filter(
+            user_id=user_id,
+            gig_instance__date__gt=now.date()
+        ) | Booking.objects.filter(
+            user_id=user_id,
+            gig_instance__date=now.date(),
+            gig_instance__start_time__gt=now.time()
+        ).order_by('-booked_on')
+        
         serializer = BookingSerializer(bookings, many=True, context={'request': request})
         return Response(serializer.data)
 

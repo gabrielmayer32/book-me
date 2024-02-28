@@ -42,26 +42,33 @@ const ProviderDashboardScreen = ({ route, navigation }) => {
     }
 };
 
-  const fetchBookingRequests = async () => {
-    try {
-        const response = await axios.get('http://127.0.0.1:8000/gig/booking-requests/', {
-            headers: {
-                Authorization: 'Bearer YOUR_TOKEN_HERE', // Replace with your token
-            },
-        });
-        const adjustedGigs = response.data.map(gig => ({
-          ...gig,
-          date: gig.date ? adjustDateTimeToUTC4(gig.date).format() : gig.date,
-          start_time: gig.start_time ? adjustTimeToUTC4(gig.start_time).format("HH:mm:ss") : gig.start_time,
-          end_time: gig.end_time ? adjustTimeToUTC4(gig.end_time).format("HH:mm:ss") : gig.end_time,
-        }));
-        setBookingRequests(adjustedGigs);
-        fetchUpcomingGigs(userInfo.id);
-      } catch (error) {
-        console.error('Failed to fetch booking requests:', error);
-        Alert.alert('Error', 'Failed to fetch booking requests.');
-    }
+const fetchBookingRequests = async () => {
+  try {
+    const response = await axios.get('http://127.0.0.1:8000/gig/booking-requests/', {
+      headers: {
+        Authorization: 'Bearer YOUR_TOKEN_HERE', // Replace with your token
+      },
+    });
+    const adjustedGigs = response.data.map(booking => ({
+      ...booking,
+      gig_instance_details: {
+        ...booking.gig_instance_details,
+        date: adjustDateTimeToUTC4(booking.gig_instance_details.date).format("YYYY-MM-DD"),
+        start_time: adjustTimeToUTC4(booking.gig_instance_details.start_time).format("HH:mm"),
+        end_time: adjustTimeToUTC4(booking.gig_instance_details.end_time).format("HH:mm"),
+      }
+    }));
+    console.log('ADJUSTED GIG')
+    console.log(adjustedGigs);
+    setBookingRequests(adjustedGigs);
+    // Assuming fetchUpcomingGigs is defined elsewhere and works correctly
+    fetchUpcomingGigs(userInfo.id);
+  } catch (error) {
+    console.error('Failed to fetch booking requests:', error);
+    Alert.alert('Error', 'Failed to fetch booking requests.');
+  }
 };
+
   const handleAcceptBooking = async (bookingId) => {
       try {
         const csrfToken = await AsyncStorage.getItem('csrfToken');

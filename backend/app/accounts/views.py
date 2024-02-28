@@ -16,6 +16,35 @@ from .models import CustomUser, SocialMedia
 from django.forms.models import model_to_dict
 from django.views.decorators.csrf import csrf_exempt
 from django.middleware.csrf import get_token
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Activity
+from .serializers import ActivitySerializer, CustomUserSerializer
+from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
+
+class ActivityCollaboratorsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, activity_id):
+        activity = get_object_or_404(Activity, id=activity_id)
+        collaborators = CustomUser.objects.filter(activity=activity, is_provider=True)
+        serializer = CustomUserSerializer(collaborators, many=True, context={'request': request})
+        return Response(serializer.data)
+    
+class ActivityList(APIView):
+    def get(self, request, format=None):
+        activities = Activity.objects.all()
+        serializer = ActivitySerializer(activities, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, format=None):
+        serializer = ActivitySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @csrf_exempt
 def login_view(request):
@@ -70,6 +99,7 @@ def service_providers_list(request):
             "email": provider.email,
             "bio": provider.bio,
             "phone_number": provider.phone_number,
+            "businessName": provider.business_name,
             # Assuming 'activity' is a related object with a 'name' attribute
             "activity": provider.activity.name if provider.activity else None,
             "profile_picture": request.build_absolute_uri(provider.profile_picture.url) if provider.profile_picture else None,

@@ -74,7 +74,7 @@ const getStatusColor = ({ status }) => {
                     </View>
                     <View style={styles.detailRow}>
                     <Icon name="clock" size={20} />
-                    <Text>{`${moment(item.gig_start_time, 'HH:mm:ss').add(4, 'hours').format('LT')} - ${moment(item.gig_end_time, 'HH:mm:ss').add(4, 'hours').format('LT')}`}</Text>
+                    <Text>{`${moment(item.gig_start_time, 'HH:mm').format('LT')} - ${moment(item.gig_end_time, 'HH:mm').format('LT')}`}</Text>
                     </View>
                 </View>
                 <View style={styles.actions}>

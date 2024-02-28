@@ -5,11 +5,13 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import moment from 'moment';
 
 const BookingRequestItem = ({ request, handleAcceptBooking, handleDeclineBooking }) => {
+  console.log('REQUEST');
+  console.log(request);
     return (
         <View style={styles.bookingRequestItem}>
             <View style={styles.header}>
                 <View style={styles.titleAndAddress}>
-                    <Text style={styles.bookingTitle}>{request.gig_instance_details.gig_title} | {moment(request.gig_instance.date).format('LL')} | {moment(request.gig_instance.start_time, 'HH:mm:ss').format('hh:mm A')}</Text>
+                    <Text style={styles.bookingTitle}>{request.gig_instance_details.gig_title} | {moment(request.gig_instance.date).format('LL')} | {moment(request.gig_instance_details.start_time, 'HH:mm:ss').format('hh:mm A')}</Text>
                 </View>
                 {/* Assuming toggleMenuVisibility is handled within the item component or passed down as prop */}
             </View>

@@ -191,6 +191,7 @@ const CalendarScreen = ({ navigation, userInfo }) => {
     };
 
     return (
+      
       <View>
         <Button title="Show End Time Picker" onPress={showPicker} />
         <DateTimePickerModal
@@ -253,6 +254,13 @@ const CalendarScreen = ({ navigation, userInfo }) => {
   };
 
   return (
+    <>
+    <CustomAppBar 
+      navigation={navigation} 
+      userInfo={userInfo} 
+      currentScreen="ProviderGigs" // Adjust this value based on the current screen
+    />
+    
     <ScreenLayout title="Create a Gig" showBackButton={true}>
       <ScrollView contentContainerStyle={styles.container}>
         <TextInput placeholder="Title" value={title} onChangeText={setTitle} style={styles.input} />
@@ -324,6 +332,7 @@ const CalendarScreen = ({ navigation, userInfo }) => {
       </ScrollView>
       {renderMapView()}
     </ScreenLayout>
+    </>
   );
 };
 const styles = StyleSheet.create({

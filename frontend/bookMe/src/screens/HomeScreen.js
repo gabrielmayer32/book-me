@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button , TouchableOpacity, Image, ScrollView, FlatList, StyleSheet} from 'react-native';
+import { View, Text,  TouchableOpacity, Image, ScrollView, FlatList, StyleSheet} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import useFetch from '../../utils/useFetch';
 import CustomTopBar from '../components/CustomBar';
@@ -7,6 +7,7 @@ import ScreenLayout from '../components/ScreenLayout'; // Adjust the import path
 import { act } from 'react-test-renderer';
 import { useUser } from '../UserContext';
 import axios from 'axios';
+import {Button} from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 
@@ -15,6 +16,57 @@ const HomeScreen = () => {
   const navigation = useNavigation();
   const { data, isLoading, error } = useFetch('http://127.0.0.1:8000/accounts/providers/');
   const [weather, setWeather] = useState({ temp: null, icon: null });
+  const [activities, setActivities] = useState([]); // State for activities
+
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/accounts/activities/'); // Adjust URL as needed
+        console.log(response.data);
+        setActivities(response.data); // Assuming the response structure
+      } catch (error) {
+        console.error('Error fetching activities:', error);
+      }
+    };
+
+    fetchActivities();
+  }, []);
+
+  // Existing code for weather and other functionalities...
+  const baseURL = 'http://127.0.0.1:8000';
+  const renderActivities = () => {
+    return (
+      <FlatList
+        data={activities}
+        horizontal={true}
+        keyExtractor={item => item.id.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => {
+            navigation.navigate('ActivityCollaborators', { 
+              activityId: item.id,
+              // Assuming these details are available and correctly named in your current context
+              providerDetails: data?.providers.map(provider => ({
+                providerId: provider.id,
+                businessName: provider.businessName,
+                activity: provider.activity,
+                age: provider.age,
+                phoneNumber: provider.phone_number,
+                profileImageUrl: provider.profile_picture,
+                socials: provider.socials,
+              }))
+            });
+          }}>
+          <View style={styles.activityContainer}>
+            <Image source={{ uri: baseURL + item.image }} style={styles.activityImage} />
+            <Text style={styles.activityName}>{item.name}</Text>
+          </View>
+        </TouchableOpacity>
+        )}
+        style={styles.activitiesList} 
+        showsHorizontalScrollIndicator={false}
+      />
+    );
+  };
   
     const getWeatherIcon = (iconCode) => {
       const mapping = {
@@ -82,6 +134,7 @@ const HomeScreen = () => {
     navigation.navigate('ProfileDetails', {
       providerId: item.id, 
       firstName: item.first_name,
+      businessName: item.businessName,
       bio: item.bio,
       age: item.age, 
       activity: item.activity, 
@@ -114,6 +167,17 @@ const HomeScreen = () => {
       )}
                   </View>
       <Image source={require('../../assets/images/1.jpg')} style={styles.topImage} />
+      {/* <TouchableOpacity style={styles.createButton} onPress={navigateToCreateGig}> */}
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.createButton}>
+          <Icon name="account" size={20} color="white" />
+          <Text style={styles.createButtonText}>Become a collaborator</Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.collaboratorsTitle}>Activities</Text>
+
+      {renderActivities()} 
+
       <Text style={styles.collaboratorsTitle}>Our Collaborators</Text>
       <FlatList
         data={data?.providers}
@@ -123,7 +187,7 @@ const HomeScreen = () => {
           <TouchableOpacity onPress={() => handlePress(item)}>
             <View style={styles.avatarContainer}>
               <Image source={{ uri: item.profile_picture }} style={styles.avatar} /> 
-              <Text style={styles.name}>{item.first_name}</Text>
+              <Text style={styles.name}>{item.businessName}</Text>
               <Text style={styles.activity}>{item.activity}</Text>
 
             </View>
@@ -135,9 +199,28 @@ const HomeScreen = () => {
 };
   
   const styles = StyleSheet.create({
+    activityContainer: {
+      alignItems: 'center',
+      marginRight: 15,
+      padding: 10,
+    },
+    buttonContainer : {
+      alignItems: 'center',
+      marginTop: 10,
+    },
+    activityImage: {
+      width: 120, // Adjust based on your design
+      height: 80, // Adjust based on your design
+      borderRadius: 10, // Rounded corners
+      marginBottom: 5,
+    },
+    activityName: {
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
     topImage: {
-      width: '90%', // Maintains the width at 80% of its container's width
-      height: 200, // Adjust height as needed
+      width: '95%', // Maintains the width at 80% of its container's width
+      height: 150, // Adjust height as needed
       alignSelf: 'center', // Centers the image horizontally within the ScrollView
       borderRadius: 20, // Adjust this value to control the roundness of the corners
       marginTop: 20, // Optional: adds some space at the top, adjust as needed
@@ -169,6 +252,19 @@ const HomeScreen = () => {
     activity: {
       fontSize: 14,
       color: '#666',
+    },
+    createButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#0AB5C8',
+      padding: 10,
+      borderRadius: 20,
+      justifyContent: 'center',
+      width: 300,
+    },
+    createButtonText: {
+      color: 'white',
+      marginLeft: 5,
     },
 
     centeredView: {

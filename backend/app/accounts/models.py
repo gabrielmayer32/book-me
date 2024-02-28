@@ -11,7 +11,7 @@ class Category(models.Model):
 class Activity(models.Model):
     name = models.CharField(max_length=100, unique=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
-
+    image = models.ImageField(upload_to='activity_images/', null=True, blank=True)  # New image field
     def __str__(self):
         return self.name
 
@@ -40,4 +40,5 @@ class CustomUser(AbstractUser):
     activity = models.ForeignKey(Activity, on_delete=models.SET_NULL, null=True, blank=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
+    business_name = models.CharField(max_length=100, blank=True, null=True)
     is_provider = models.BooleanField(default=False, help_text='Designates whether this user should be treated as a provider.')
