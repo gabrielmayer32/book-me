@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   dateText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   gigDetails: {

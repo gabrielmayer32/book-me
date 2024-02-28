@@ -21,20 +21,21 @@ const CustomAppBar = ({ navigation, userInfo, currentScreen }) => {
   return (
     <Appbar.Header>
       <Appbar.Content title="Dashboard" />
-      <Appbar.Action 
+      <Appbar.Action     
+
         icon="account-circle" 
         onPress={goToProfile} 
-        color={currentScreen === 'ProviderDashboard' ? 'blue' : 'black'}
+        color={currentScreen === 'ProviderDashboard' ? '#4A90E2' : 'black'}
       />
       <Appbar.Action 
         icon="calendar" 
         onPress={goToCalendar} 
-        color={currentScreen === 'ProviderGigs' ? 'blue' : 'black'}
+        color={currentScreen === 'ProviderGigs' ? '#4A90E2' : 'black'}
       />
       <Appbar.Action 
         icon="bell" 
         onPress={goToNotifications} 
-        color={currentScreen === 'NotificationsScreen' ? 'blue' : 'black'}
+        color={currentScreen === 'NotificationsScreen' ? '#4A90E2' : 'black'}
       />
     </Appbar.Header>
   );

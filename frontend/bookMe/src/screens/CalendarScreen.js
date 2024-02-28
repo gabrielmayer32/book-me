@@ -130,14 +130,13 @@ const CalendarScreen = ({ navigation, userInfo }) => {
         .split("T")[1]
         .substring(0, 5);
       const csrfToken = await AsyncStorage.getItem("csrfToken");
-      console.log("csrfToken:", csrfToken);
       const response = await axios.post(
         "http://127.0.0.1:8000/gig/create/",
         {
           title,
           description,
           price,
-          max_people: maxPeople,
+          max_people: parseInt(maxPeople, 10),
           date: isRecurring ? null : formattedDate,
           start_time: formattedStartTime,
           end_time: formattedEndTime,
@@ -153,10 +152,10 @@ const CalendarScreen = ({ navigation, userInfo }) => {
           },
         },
       );
-
+          
       if (response.status === 201) {
         console.log("Gig created successfully:", response.data);
-        // Handle success, maybe navigate or show a success message
+        navigation.navigate("ProviderGigs", { gigId: response.data.id });
       } else {
         console.error("Failed to create gig:", response.data);
         // Handle error, show an error message

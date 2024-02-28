@@ -7,5 +7,5 @@ export const adjustDateTimeToUTC4 = (dateTime) => {
 
 // Adjusts a time string to UTC+4, assuming the time is in 'HH:mm:ss' format
 export const adjustTimeToUTC4 = (time) => {
-  return moment.utc(time, "HH:mm:ss").add(4, 'hours');
+  return moment.utc(time, "HH:mm").add(4, 'hours');
 };

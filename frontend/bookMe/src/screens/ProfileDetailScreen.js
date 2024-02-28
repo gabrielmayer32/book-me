@@ -76,8 +76,15 @@ const ProfileDetailsScreen = ({ route }) => {
       }
 
       const data = await response.json();
-      // Process and set state with the fetched gigs data
-      setUpcomingGigs(data);
+      const adjustedGigs = data.map(gig => ({
+        ...gig,
+        date: gig.date ? adjustDateTimeToUTC4(gig.date).format() : gig.date,
+        start_time: gig.start_time ? adjustTimeToUTC4(gig.start_time).format("HH:mm") : gig.start_time,
+        end_time: gig.end_time ? adjustTimeToUTC4(gig.end_time).format("HH:mm") : gig.end_time,
+      }));
+
+      setUpcomingGigs(adjustedGigs);
+      setSelectedSlots(data.remaining_slots)
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch upcoming gigs. Please try again later.');
     }
@@ -187,10 +194,10 @@ const ProfileDetailsScreen = ({ route }) => {
             <Text style={styles.modalText}>Choose how many places you book </Text>
 
             <Picker
-              selectedValue={selectedSlots}
+              selectedValue={selectedGigInstanceId.remaining_slots}
               style={styles.pickerStyle}
               onValueChange={(itemValue) => setSelectedSlots(itemValue)}>
-              {[...Array(maxSlots).keys()].map(n => (
+              {[...Array(selectedGigInstanceId.remaining_slots).keys()].map(n => (
                 <Picker.Item key={n+1} label={`${n+1}`} value={n+1} />
               ))}
             </Picker>
@@ -316,12 +323,12 @@ const styles = StyleSheet.create({
   },
   
   dateText: {
-    fontSize: 18, // Adjust as needed
+    fontSize: 16, // Adjust as needed
     fontWeight: 'bold', // Make the date stand out
   },
 
   modalHeader : {
-    fontSize: 18, // Adjust as needed
+    fontSize: 16, // Adjust as needed
     fontWeight: 'bold', // Make the date stand out
     marginBottom: 5, // Add some space below the header
 
@@ -384,7 +391,7 @@ const styles = StyleSheet.create({
   },
   
   upcomingGigsHeader: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginTop: 20,
     marginBottom: 10,

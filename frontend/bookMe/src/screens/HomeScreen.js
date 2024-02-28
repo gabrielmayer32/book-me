@@ -14,7 +14,6 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 const HomeScreen = () => {
   const navigation = useNavigation();
   const { data, isLoading, error } = useFetch('http://127.0.0.1:8000/accounts/providers/');
-  console.log(data);
   const [weather, setWeather] = useState({ temp: null, icon: null });
   
     const getWeatherIcon = (iconCode) => {
@@ -52,15 +51,11 @@ const HomeScreen = () => {
       // Use trip details for latitude and longitude
       const lat = -20.348404
       const lon = 57.552152
-      console.log(`Fetching weather for ${lat}, ${lon}`);
       const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
       // const url = 'https://api.openweathermap.org/data/2.5/weather?lat=-20.33&lon=57.38&appid=32cd2bacbb63068b58a349971751f5ba&units=metric';
-      console.log(url);
       // console.log(url_bis);
       try {
         const response = await axios.get(url);
-        console.log(response);
-        console.log(response.data);
         var { temp } = response.data.main;
         temp = temp.toFixed(0);
         const icon = response.data.weather[0].icon;
@@ -72,7 +67,6 @@ const HomeScreen = () => {
 
     const greeting = () => {
       const hour = new Date().getHours();
-      console.log(hour);
       if (hour < 12) return 'Good morning';
       if (hour < 18) return 'Good afternoon';
       return 'Good evening';
@@ -80,21 +74,20 @@ const HomeScreen = () => {
 
 
     useEffect(() => {
-      console.log(userInfo);
       fetchWeather();
     }, [userInfo]);
 
   const handlePress = (item) => {
-    // Assuming item.socials is an array of { platform, url, icon }
+
     navigation.navigate('ProfileDetails', {
       providerId: item.id, 
       firstName: item.first_name,
       bio: item.bio,
       age: item.age, 
       activity: item.activity, 
-      phoneNumber: item.phone_number, // Assuming you have phone number data
-      profileImageUrl: item.profile_picture, // Assuming you have profile image URL
-      socials: item.socials, // Directly pass the socials array received from your backend
+      phoneNumber: item.phone_number, 
+      profileImageUrl: item.profile_picture, 
+      socials: item.socials, 
     });
   };
 

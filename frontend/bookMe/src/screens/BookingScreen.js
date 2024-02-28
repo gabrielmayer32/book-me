@@ -51,7 +51,6 @@ const BookingsScreen = () => {
 
     const getStatusColor = ({ status }) => {
         let backgroundColor;
-        console.log(status);
         switch (status) {
           case 'pending':
             backgroundColor = 'orange';

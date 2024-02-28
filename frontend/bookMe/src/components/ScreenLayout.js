@@ -6,7 +6,7 @@ import CustomTopBar from './CustomBar';
 const ScreenLayout = ({ title, onProfilePress, showBackButton, children }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
-      <CustomTopBar onProfilePress={onProfilePress} title={title} showBackButton={showBackButton} />
+      {/* <CustomTopBar onProfilePress={onProfilePress} title={title} showBackButton={showBackButton} /> */}
         {children}
     </SafeAreaView>
   );
@@ -17,6 +17,7 @@ const styles = StyleSheet.create({
     flex: 1,
     
   },
+  
   content: {
     flexGrow: 1,
     // justifyContent: 'space-between',

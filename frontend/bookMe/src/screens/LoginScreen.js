@@ -26,10 +26,9 @@ const handleLogin = async () => {
       await AsyncStorage.setItem('csrfToken', csrfToken); 
 
       const result = await response.json();
-      console.log(result);
       if (result.success && result.user) {
         setUserInfo(result.user); // Set userInfo in global context
-        // await AsyncStorage.setItem('user', csrfToken); 
+        console.log(result)
         navigation.navigate(result.user.isProvider ? 'ProviderDashboard' : 'HomeTabs');
         
       } else  {

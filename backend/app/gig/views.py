@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Booking, Gig
-from .serializers import BookingSerializer, GigSerializer
+from .serializers import BookingSerializer, DashboardGigInstanceSerializer, ExtendedGigSerializer, GigInstanceSerializer, GigSerializer, MainBookingSerializer
 
 
 from rest_framework import status
@@ -48,15 +48,13 @@ class CancelBookingView(APIView):
 class UserBookingsView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, user_id):
-        # Ensure that users can only access their own bookings
-        if request.user.id != user_id and not request.user.is_staff:
+    def get(self, request, *args, **kwargs):
+        user_id = self.kwargs.get('user_id')
+        if request.user.id != int(user_id) and not request.user.is_staff:
             return Response({'error': 'You do not have permission to view these bookings.'}, status=403)
 
         bookings = Booking.objects.filter(user_id=user_id).order_by('-booked_on')
-        
-        serializer = BookingSerializer(bookings, many=True)
-        print(serializer.data)
+        serializer = BookingSerializer(bookings, many=True, context={'request': request})
         return Response(serializer.data)
 
 class BookGigView(APIView):
@@ -81,6 +79,7 @@ class BookGigView(APIView):
         return Response({'message': 'Booking successful.', 'booking_id': booking.id})
 from django.utils import timezone
 from django.db.models import ExpressionWrapper, F, DateTimeField
+from django.db.models import Count, Prefetch
 
 from django.utils import timezone
 import pytz
@@ -97,9 +96,110 @@ class UpcomingGigsView(APIView):
         now = timezone.now()
         three_months_later = now.date() + timedelta(days=90)
 
+        gig_instances = GigInstance.objects.filter(
+            gig__provider=provider,
+            date__range=[now.date(), three_months_later],
+            gig_bookings__status=Booking.StatusChoices.ACCEPTED,
+            start_time__gt=now.time()  # Ensure start time is in the future
+        ).annotate(
+            confirmed_bookings_count=Count('gig_bookings', filter=Q(gig_bookings__status=Booking.StatusChoices.ACCEPTED))
+        ).prefetch_related(
+            Prefetch('gig_bookings', queryset=Booking.objects.select_related('user').filter(status=Booking.StatusChoices.ACCEPTED))
+        ).distinct().order_by('date', 'start_time')
+
+        gigs_data = []
+        for gig_instance in gig_instances:
+            if gig_instance.confirmed_bookings_count > 0:
+                bookings_data = []
+                for booking in gig_instance.gig_bookings.all():
+                    bookings_data.append({
+                        'user_id': booking.user.id,
+                        'user_name': booking.user.get_full_name(),
+                        'user_email': booking.user.email,
+                        'number_of_slots': booking.number_of_slots
+                    })
+                
+                gigs_data.append({
+                    'id': gig_instance.id,
+                    'title': gig_instance.gig.title,
+                    'description': gig_instance.gig.description,
+                    'date': gig_instance.date.strftime("%Y-%m-%d"),
+                    'start_time': gig_instance.start_time.strftime("%H:%M"),
+                    'end_time': gig_instance.end_time.strftime("%H:%M") if gig_instance.end_time else None,
+                    'latitude': gig_instance.gig.latitude,
+                    'longitude': gig_instance.gig.longitude,
+                    'address': gig_instance.gig.address,
+                    'bookings': bookings_data,  # Include the list of bookings for this gig instance
+                })
+        print(gigs_data)
+        return Response(gigs_data)
+
+class ProviderUpcomingGigsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        provider_id = kwargs.get('provider_id')
+        User = get_user_model()
+        provider = get_object_or_404(User, pk=provider_id)
+
+        now = timezone.now()
+        three_months_later = now.date() + timedelta(days=90)
+
+        gig_instances = GigInstance.objects.filter(
+            gig__provider=provider,
+            date__range=[now.date(), three_months_later],
+            gig_bookings__status=Booking.StatusChoices.ACCEPTED,
+            start_time__gt=now.time()  # Ensure start time is in the future
+        ).annotate(
+            confirmed_bookings_count=Count('gig_bookings', filter=Q(gig_bookings__status=Booking.StatusChoices.ACCEPTED))
+        ).prefetch_related(
+            Prefetch('gig_bookings', queryset=Booking.objects.select_related('user').filter(status=Booking.StatusChoices.ACCEPTED))
+        ).distinct().order_by('date', 'start_time')
+
+        gigs_data = []
+        for gig_instance in gig_instances:
+            if gig_instance.confirmed_bookings_count > 0:
+                bookings_data = []
+                for booking in gig_instance.gig_bookings.all():
+                    bookings_data.append({
+                        'user_id': booking.user.id,
+                        'user_name': booking.user.get_full_name(),
+                        'user_email': booking.user.email,
+                        'number_of_slots': booking.number_of_slots
+                    })
+                
+                gigs_data.append({
+                    'id': gig_instance.id,
+                    'title': gig_instance.gig.title,
+                    'description': gig_instance.gig.description,
+                    'date': gig_instance.date.strftime("%Y-%m-%d"),
+                    'start_time': gig_instance.start_time.strftime("%H:%M"),
+                    'end_time': gig_instance.end_time.strftime("%H:%M") if gig_instance.end_time else None,
+                    'latitude': gig_instance.gig.latitude,
+                    'longitude': gig_instance.gig.longitude,
+                    'address': gig_instance.gig.address,
+                    'max_people': gig_instance.gig.max_people,
+                    'bookings': bookings_data,  # Include the list of bookings for this gig instance
+                })
+        print(gigs_data)
+        return Response(gigs_data)
+    
+class UpcomingGigsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        provider_id = kwargs.get('provider_id')
+        User = get_user_model()
+        provider = get_object_or_404(User, pk=provider_id)
+
+        now = timezone.now()
+        three_months_later = now.date() + timedelta(days=90)
+
         # First, get IDs of gigs that the user has already booked
         user_booked_gig_instance_ids = Booking.objects.filter(
-            user=request.user
+            user=request.user,
+            status=Booking.StatusChoices.PENDING
+
         ).values_list('gig_instance_id', flat=True)
 
         potential_gigs = GigInstance.objects.filter(
@@ -130,15 +230,14 @@ class UpcomingGigsView(APIView):
 
         return Response(gigs_data)
 
-
-
 class CreateGigView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         serializer = GigSerializer(data=request.data, context={'request': request})
+        print(request.data)
         if serializer.is_valid():
-            serializer.save(provider=request.user)  # Automatically set the provider
+            serializer.save(provider=request.user)  
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             print(serializer.errors)  # Log or print for debugging
@@ -166,3 +265,89 @@ class ProviderGigsView(APIView):
         
         serializer = GigSerializer(provider_gigs, many=True)
         return Response(serializer.data)
+
+from rest_framework.pagination import PageNumberPagination
+
+
+class GigInstancesView(APIView):
+    """
+    Retrieve a specific gig along with its instances.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, gig_id):
+        gig = get_object_or_404(Gig, pk=gig_id, provider=request.user)
+
+        # Since ExtendedGigSerializer already handles instances, just serialize the gig
+        serializer = ExtendedGigSerializer(gig, context={'request': request})
+        print(serializer.data)
+        return Response(serializer.data)
+    
+class BookingRequestsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        # Filter bookings by the current user's gigs and status 'PENDING'
+        bookings = Booking.objects.filter(
+            gig_instance__gig__provider=request.user,
+            status=Booking.StatusChoices.PENDING
+        )
+        serializer = MainBookingSerializer(bookings, many=True)
+        return Response(serializer.data)
+
+from rest_framework import status
+
+class AcceptBookingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, booking_id):
+        booking = get_object_or_404(Booking, id=booking_id, gig_instance__gig__provider=request.user)
+        booking.status = Booking.StatusChoices.ACCEPTED
+        booking.save()
+        return Response({"message": "Booking accepted."}, status=status.HTTP_200_OK)
+
+class DeclineBookingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, booking_id):
+        booking = get_object_or_404(Booking, id=booking_id, gig_instance__gig__provider=request.user)
+        booking.status = Booking.StatusChoices.DECLINED
+        booking.save()
+        return Response({"message": "Booking declined."}, status=status.HTTP_200_OK)
+    
+
+class GigDetailView(APIView):
+    """
+    Retrieve a gig with all its instances.
+    """
+
+    def get(self, request, pk, format=None):
+        gig = get_object_or_404(Gig, pk=pk)
+
+        serializer = DashboardGigInstanceSerializer(gig)
+        print(serializer.data)
+        return Response(serializer.data)
+    
+class GigUpdateAPIView(APIView):
+    """
+    Update a gig instance.
+    """
+    
+    def patch(self, request, pk):
+        # Adjust start_time and end_time in the request.data if they exist
+        data = request.data.copy()  # Make a mutable copy of the request data
+
+        # Subtract 4 hours from start_time and end_time if present
+        for time_field in ['start_time', 'end_time']:
+            if time_field in data:
+                original_time = datetime.strptime(data[time_field], '%H:%M:%S').time()
+                adjusted_time = (datetime.combine(datetime.today(), original_time) - timedelta(hours=4)).time()
+                data[time_field] = adjusted_time.strftime('%H:%M:%S')
+
+        gig = get_object_or_404(GigInstance, pk=pk)
+        serializer = GigInstanceSerializer(gig, data=data, partial=True)  # partial=True allows for partial updates
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

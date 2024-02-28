@@ -6,8 +6,14 @@ from django.db import models, transaction
 class DayOfWeek(models.Model):
     name = models.CharField(max_length=9)  # For day names (Monday, Tuesday, etc.)
 
+    @property
+    def weekday(self):
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        return days.index(self.name)
+
     def __str__(self):
         return self.name
+
 
 
 class Category(models.Model):
@@ -50,6 +56,19 @@ class Gig(models.Model):
             else:
                 self.create_single_gig_instance()
 
+    def create_gig_instances(self):
+        with transaction.atomic():
+            dates = self.calculate_gig_dates()
+            for date in dates:
+                GigInstance.objects.create(
+                    gig=self,
+                    date=date,
+                    start_time=self.start_time,
+                    end_time=self.end_time,
+                    max_people=self.max_people,
+                    address=self.address
+                )
+
     def create_single_gig_instance(self):
         """Create a single gig instance for non-recurring gigs."""
         if self.date:
@@ -57,37 +76,31 @@ class Gig(models.Model):
                 gig=self,
                 date=self.date,
                 start_time=self.start_time,
-                end_time=self.end_time
+                end_time=self.end_time,
+                max_people=self.max_people,
+                address=self.address
             )
 
-    def calculate_gig_dates(self):
-        """
-        Generate a list of dates for the next 12 occurrences of the gig.
-        This is a simplified example; adjust according to your recurrence logic.
-        """
-        if not self.is_recurring:
-            return [self.date] if self.date else []
 
-        # Example: Calculate the next 12 occurrences from today, for simplicity.
-        # You should adjust this logic based on your actual recurrence pattern.
+    def calculate_gig_dates(self):
+        if not self.is_recurring or not self.recurring_days.exists():
+            return []
+
+        # Fetch the weekday integers for the recurring_days IDs
+        recurring_weekdays = [day.weekday for day in self.recurring_days.all()]
+
         start_date = datetime.now().date()
+        end_date = start_date + timedelta(weeks=12)
         dates = []
-        for week in range(1, 13):  # Next 12 weeks
-            gig_date = start_date + timedelta(weeks=week)
-            dates.append(gig_date)
+
+        while start_date <= end_date:
+            if start_date.weekday() in recurring_weekdays:
+                dates.append(start_date)
+            start_date += timedelta(days=1)
+
         return dates
 
-    def create_gig_instances(self):
-        with transaction.atomic():
-            # Assuming you have a method to calculate the dates for GigInstances
-            dates = self.calculate_gig_dates()
-            for date in dates:
-                GigInstance.objects.create(
-                    gig=self,
-                    date=date,
-                    start_time=self.start_time,
-                    end_time=self.end_time
-                )
+   
 
 
     def __str__(self):
@@ -112,20 +125,23 @@ class GigInstance(models.Model):
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
     is_booked = models.BooleanField(default=False)
-    bookings = models.PositiveIntegerField(default=0)  # Track the number of bookings
-    
+    bookings = models.PositiveIntegerField(default=0)
+    max_people = models.PositiveIntegerField()
+    address = models.CharField(max_length=255, null=True, blank=True)
+
     class Meta:
-        unique_together = ['gig', 'date', 'start_time']
+        unique_together = ['id', 'gig', 'date', 'start_time']
     
     @property
     def remaining_slots(self):
         """Calculate the remaining slots for the gig instance."""
         total_booked_slots = sum(booking.number_of_slots for booking in self.gig_bookings.all())
-        return max(0, self.gig.max_people - total_booked_slots)
+        return max(0, self.max_people - total_booked_slots)  # Use this instance's max_people
 
     @property
     def is_fully_booked(self):
         return self.remaining_slots <= 0
+
 
     def __str__(self):
         return f" User : {self.gig.provider.first_name} - {self.gig.title} - {self.date} ({self.start_time} - {self.end_time})"
@@ -147,3 +163,11 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"{self.user.username} booked {self.number_of_slots} slots for {self.gig_instance.gig.title} on {self.booked_on.strftime('%Y-%m-%d')} - {self.status}"
+    
+from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import Booking
+from .serializers import BookingSerializer
+

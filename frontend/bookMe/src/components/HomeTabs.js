@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import HomeScreen from '../screens/HomeScreen';
 import BookingsScreen from '../screens/BookingScreen';
 import NotificationScreen from '../screens/NotificationScreen';
-
+import ProfileDetailScreen from '../screens/ProfileDetailScreen';
 const Tab = createBottomTabNavigator();
 
 const AppTabs = () => {
@@ -29,6 +29,7 @@ const AppTabs = () => {
         tabBarInactiveTintColor: 'gray',
       })}
     >
+
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Bookings" component={BookingsScreen} />
       <Tab.Screen name="Notification" component={NotificationScreen} />
