@@ -8,6 +8,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import moment from 'moment'; // Import moment
 import { adjustDateTimeToUTC4, adjustTimeToUTC4 } from '../../utils/utcTime';
 import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEffect
+import {BACKEND_URL} from '../../utils/constants/';
 
 
 const ProviderGigsScreen = ({ navigation }) => {
@@ -45,7 +46,7 @@ const ProviderGigsScreen = ({ navigation }) => {
   const fetchProviderGigs = async (providerId) => {
     const csrfToken = await AsyncStorage.getItem('csrfToken'); 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/gig/get/?providerId=${providerId}`, {
+      const response = await fetch(`${BACKEND_URL}/gig/get/?providerId=${providerId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

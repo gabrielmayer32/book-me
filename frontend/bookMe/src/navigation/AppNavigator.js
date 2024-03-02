@@ -13,6 +13,7 @@ import ProviderGigScreen from '../screens/ProviderGigScreen';
 import AppTabs from '../components/HomeTabs';
 import RecurringGigInstancesScreen from '../screens/RecurringGigInstances';
 import ActivityCollaborators from '../screens/ActivityCollaboratorsScreen';
+import ProviderNotificationScreen from '../screens/ProviderNotificationScreen';
 
 const Stack = createStackNavigator();
 
@@ -24,7 +25,7 @@ function AppNavigator() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="HomeTabs" component={AppTabs} />
         <Stack.Screen name="RecurringGigInstances" component={RecurringGigInstancesScreen} />
-    
+        <Stack.Screen name="ProviderNotificationScreen" component={ProviderNotificationScreen} />
         <Stack.Screen name="ProfileDetails" component={ProfileDetailScreen} />
         <Stack.Screen name="ProviderDashboard" component={ProviderDashboard} />
         <Stack.Screen name="ProviderGigs" component={ProviderGigScreen} />

@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet, Dimensions }
 import axios from 'axios';
 import ScreenLayout from '../components/ScreenLayout';
 import { useUser } from '../UserContext';
+import {BACKEND_URL} from '../../utils/constants/';
 
 const { width } = Dimensions.get('window');
 const numColumns = 3; // Number of columns in the grid
@@ -18,7 +19,7 @@ const ActivityCollaboratorsScreen = ({ route, navigation }) => {
     const fetchCollaboratorsAndDetails = async () => {
       try {
         // Fetch collaborators based on activityId
-        const collabResponse = await axios.get(`http://127.0.0.1:8000/accounts/activities/${activityId}/collaborators/`);
+        const collabResponse = await axios.get(`${BACKEND_URL}/accounts/activities/${activityId}/collaborators/`);
         // You might fetch additional details here or in ProfileDetailsScreen based on providerId
         setCollaborators(collabResponse.data);
       } catch (error) {

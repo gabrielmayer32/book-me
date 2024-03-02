@@ -1,4 +1,4 @@
-import React , { Linking,useEffect, useState }from 'react';
+import React , { Linking,useEffect, useState, useCallback}from 'react';
 import { View, Text, Image, Alert, StyleSheet, FlatList,ScrollView, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ScreenLayout from '../components/ScreenLayout';
@@ -10,11 +10,14 @@ import BookingRequestItem from '../components/BookingRequestItem';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import GigItem from '../components/GigItem';
 import { adjustDateTimeToUTC4, adjustTimeToUTC4 } from '../../utils/utcTime';
+import {BACKEND_URL} from '../../utils/constants/';
+import { useFocusEffect } from '@react-navigation/native';
 
 const ProviderDashboardScreen = ({ route, navigation }) => {
-    const { userInfo } = useUser();
+    const { userInfo, notificationCount } = useUser();
     const [upcomingGigs, setUpcomingGigs] = useState([]); // Placeholder state for upcoming gigs
     const [bookingRequests, setBookingRequests] = useState([]);
+    console.log(`Notification count in MainScreen: ${notificationCount}`);
 
     useEffect(() => {
       console.log(userInfo)
@@ -22,13 +25,21 @@ const ProviderDashboardScreen = ({ route, navigation }) => {
       fetchBookingRequests();
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+        if (userInfo && userInfo.id) {
+            fetchUpcomingGigs(userInfo.id);
+            fetchBookingRequests();
+        }
+    }, [userInfo])
+);
+
   const fetchUpcomingGigs = async (providerId) => {
     try {
-        const response = await axios.get(`http://127.0.0.1:8000/gig/provider/${providerId}/dashboard-upcoming-gigs/`, {
+        const response = await axios.get(`${BACKEND_URL}/gig/provider/${providerId}/dashboard-upcoming-gigs/`, {
             headers: {
             },
         });
-        console.log(response.data);
         const adjustedGigs = response.data.map(gig => ({
           ...gig,
           date: gig.date ? adjustDateTimeToUTC4(gig.date).format('YYYY-MM-DD') : gig.date,
@@ -44,7 +55,7 @@ const ProviderDashboardScreen = ({ route, navigation }) => {
 
 const fetchBookingRequests = async () => {
   try {
-    const response = await axios.get('http://127.0.0.1:8000/gig/booking-requests/', {
+    const response = await axios.get(`${BACKEND_URL}/gig/booking-requests/`, {
       headers: {
         Authorization: 'Bearer YOUR_TOKEN_HERE', // Replace with your token
       },
@@ -58,8 +69,6 @@ const fetchBookingRequests = async () => {
         end_time: adjustTimeToUTC4(booking.gig_instance_details.end_time).format("HH:mm"),
       }
     }));
-    console.log('ADJUSTED GIG')
-    console.log(adjustedGigs);
     setBookingRequests(adjustedGigs);
     // Assuming fetchUpcomingGigs is defined elsewhere and works correctly
     fetchUpcomingGigs(userInfo.id);
@@ -69,40 +78,6 @@ const fetchBookingRequests = async () => {
   }
 };
 
-  const handleAcceptBooking = async (bookingId) => {
-      try {
-        const csrfToken = await AsyncStorage.getItem('csrfToken');
-
-          await axios.post(`http://127.0.0.1:8000/gig/accept-booking/${bookingId}/`, 
-          { status: 'accepted' }, 
-          { headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken,
-          } }); // Replace with your token
-          Alert.alert('Success', 'Booking accepted.');
-          fetchBookingRequests();
-      } catch (error) {
-          console.error('Failed to accept booking:', error);
-          Alert.alert('Error', 'Failed to accept booking.');
-      }
-  };
-
-  const handleDeclineBooking = async (bookingId) => {
-      try {
-        const csrfToken = await AsyncStorage.getItem('csrfToken');
-          await axios.patch(`http://127.0.0.1:8000/gig/decling-booking/${bookingId}/`, 
-          { status: 'declined' }, 
-          { headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken,
-          } }); // Replace with your token
-          Alert.alert('Success', 'Booking declined.');
-          // Optionally refresh the booking requests list
-      } catch (error) {
-          console.error('Failed to decline booking:', error);
-          Alert.alert('Error', 'Failed to decline booking.');
-      }
-  };
   
   const socialIcons = {
     facebook: 'facebook',
@@ -128,7 +103,9 @@ const fetchBookingRequests = async () => {
     <CustomAppBar 
       navigation={navigation} 
       userInfo={userInfo} 
-      currentScreen="ProviderDashboard" // Adjust this value based on the current screen
+      currentScreen="ProviderDashboard" 
+      notificationCount={notificationCount}
+      
     />
     
     <ScreenLayout >
@@ -157,40 +134,19 @@ const fetchBookingRequests = async () => {
           <Text style={styles.contactText}>{userInfo.phoneNumber}</Text>
         </View>
       </View>
-      <View style={styles.section}>
-                    <Text style={styles.upcomingGigsTitle}>Booking Requests</Text>
-                    {bookingRequests.length > 0 ? (
-                        <FlatList
-                        horizontal={true} // Change FlatList direction to horizontal
-                        data={bookingRequests}
-                        keyExtractor={item => item.id.toString()}
-                        renderItem={({ item }) => (
-                            <BookingRequestItem
-                                request={item}
-                                handleAcceptBooking={handleAcceptBooking}
-                                handleDeclineBooking={handleDeclineBooking}
-                            />
-                        )}
-                    />
-                    ) : (
-                        <Text style={styles.noGigsText} >No booking requests found.</Text>
-                    )}
-              </View>
+      
 
       <View style={styles.section}>
 
       <Text style={styles.upcomingGigsTitle}>Your Upcoming Gigs</Text>
       {upcomingGigs.length > 0 ? (
-        upcomingGigs.map((gig, index) => (
-          <FlatList
+        <FlatList
           data={upcomingGigs}
           horizontal={true} // Change FlatList direction to horizontal
-            
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => <GigItem gig={item} />}
-      />
+        />
       
-        ))
       ) : (
         <Text style={styles.noGigsText}>No upcoming gigs found.</Text>
       )}

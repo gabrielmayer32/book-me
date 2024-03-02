@@ -9,6 +9,7 @@ import { useUser } from "../UserContext";
 import GigItem from "../components/GigItem";
 import { adjustDateTimeToUTC4, adjustTimeToUTC4 } from "../../utils/utcTime";
 import GigItemBis from "../components/GigItemBis";
+import {BACKEND_URL} from '../../utils/constants/';
 
 const RecurringGigInstancesScreen = ({ route, navigation}) => {
     const { gigId } = route.params;
@@ -39,7 +40,7 @@ const RecurringGigInstancesScreen = ({ route, navigation}) => {
         const fetchGigInstances = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch(`http://127.0.0.1:8000/gig/instances/${gigId}/`, {
+                const response = await fetch(`${BACKEND_URL}/gig/instances/${gigId}/`, {
                     headers: {
                         "Content-Type": "application/json",
                         // "X-CSRFToken": csrfToken, // Uncomment after defining csrfToken
@@ -48,7 +49,6 @@ const RecurringGigInstancesScreen = ({ route, navigation}) => {
                 if (!response.ok) throw new Error("Network response was not ok");
                 const data = await response.json();
                 setGigInstances(data.instances);
-                console.log(data)
                 setTitle(data.title);
             } catch (error) {
                 console.error("Error fetching gig instances:", error);

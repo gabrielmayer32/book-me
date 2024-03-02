@@ -3,17 +3,22 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import moment from 'moment';
+import { adjustDateTimeToUTC4, adjustTimeToUTC4 } from '../../utils/utcTime';
 
 const BookingRequestItem = ({ request, handleAcceptBooking, handleDeclineBooking }) => {
-  console.log('REQUEST');
-  console.log(request);
     return (
         <View style={styles.bookingRequestItem}>
             <View style={styles.header}>
-                <View style={styles.titleAndAddress}>
-                    <Text style={styles.bookingTitle}>{request.gig_instance_details.gig_title} | {moment(request.gig_instance.date).format('LL')} | {moment(request.gig_instance_details.start_time, 'HH:mm:ss').format('hh:mm A')}</Text>
-                </View>
-                {/* Assuming toggleMenuVisibility is handled within the item component or passed down as prop */}
+            <View style={styles.titleAndAddress}>
+        <Text style={styles.bookingTitle}>
+          <Text>{request.gig_instance_details.gig_title}</Text>
+          {'\n'}
+          <Text>{adjustDateTimeToUTC4(request.gig_instance_details.date).format('LL')}</Text>
+          {'\n'}
+          <Text>{adjustTimeToUTC4(request.gig_instance_details.start_time).format('hh:mm A')}</Text>
+        </Text>
+      </View>
+
             </View>
             
             <View style={styles.detailRow}>

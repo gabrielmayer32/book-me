@@ -1,16 +1,21 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import HomeScreen from '../screens/HomeScreen';
+import { SafeAreaView, StyleSheet, ScrollView, TouchableOpacity, View } from 'react-native';
 import BookingsScreen from '../screens/BookingScreen';
 import NotificationScreen from '../screens/NotificationScreen';
 import ProfileDetailScreen from '../screens/ProfileDetailScreen';
 import HomeStackScreen from './HomeStack';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import { useUser } from '../UserContext';
+import { Badge } from 'react-native-paper';
 
 const Tab = createBottomTabNavigator();
 
 function AppTabs() {
+  const { userInfo, notificationCount, resetNotificationCount } = useUser();
+  const navigation = useNavigation(); // Get access to navigation
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -38,7 +43,21 @@ function AppTabs() {
         })}
       />
       <Tab.Screen name="Bookings" component={BookingsScreen} />
-      <Tab.Screen name="Notification" component={NotificationScreen} />
+      <Tab.Screen
+          name="Notification"
+          component={NotificationScreen}
+          options={{
+            tabBarIcon: ({ focused, color, size }) => (
+              <View>
+                <Icon name={focused ? 'bell' : 'bell-outline'} size={size} color={color} />
+                {notificationCount > 0 && (
+                  <Badge style={{ position: 'absolute', top: 0, right: -6 }}>{notificationCount}</Badge>
+                )}
+              </View>
+            ),
+          }}
+        />
+
     </Tab.Navigator>
   );
 }

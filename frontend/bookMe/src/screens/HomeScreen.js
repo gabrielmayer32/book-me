@@ -9,19 +9,20 @@ import { useUser } from '../UserContext';
 import axios from 'axios';
 import {Button} from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {BACKEND_URL} from '../../utils/constants/';
 
 
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const { data, isLoading, error } = useFetch('http://127.0.0.1:8000/accounts/providers/');
+  const { data, isLoading, error } = useFetch(`${BACKEND_URL}/accounts/providers/`);
   const [weather, setWeather] = useState({ temp: null, icon: null });
   const [activities, setActivities] = useState([]); // State for activities
 
   useEffect(() => {
     const fetchActivities = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/accounts/activities/'); // Adjust URL as needed
+        const response = await axios.get(`${BACKEND_URL}/accounts/activities/`); // Adjust URL as needed
         console.log(response.data);
         setActivities(response.data); // Assuming the response structure
       } catch (error) {
@@ -33,7 +34,7 @@ const HomeScreen = () => {
   }, []);
 
   // Existing code for weather and other functionalities...
-  const baseURL = 'http://127.0.0.1:8000';
+  const baseURL = `${BACKEND_URL}`;
   const renderActivities = () => {
     return (
       <FlatList

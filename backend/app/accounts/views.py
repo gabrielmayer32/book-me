@@ -45,6 +45,29 @@ class ActivityList(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+# views.py
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from .models import CustomUser, ExpoPushToken
+
+@csrf_exempt
+@require_POST
+def receive_expo_push_token(request):
+    try:
+        data = json.loads(request.body)
+        user_id = data.get('userId')
+        token = data.get('expoPushToken')
+        
+        user = CustomUser.objects.get(id=user_id)
+        ExpoPushToken.objects.update_or_create(user=user, defaults={'token': token})
+        
+        return JsonResponse({"success": True, "message": "Token saved successfully."})
+    except Exception as e:
+        return JsonResponse({"success": False, "message": str(e)}, status=400)
+
 
 @csrf_exempt
 def login_view(request):
@@ -55,30 +78,58 @@ def login_view(request):
         user = authenticate(request, username=username.lower(), password=password)
         if user is not None:
             login(request, user)
-            # Initialize common user info
+            if user.profile_picture and hasattr(user.profile_picture, 'url'):
+                profile_picture_url = request.build_absolute_uri(user.profile_picture.url)
+            else:
+                profile_picture_url = None
+            print(profile_picture_url)
             user_info = {
                 "id": user.id,
                 "username": user.username,
                 "email": user.email,
                 "firstName": user.first_name,
                 "isProvider": user.is_provider,
-                "profilePicture": request.build_absolute_uri(user.profile_picture.url) if user.profile_picture else None,
+                "profilePicture": profile_picture_url,
             }
 
-            # Additional info for providers
             if user.is_provider:
-                try:
-                    activity_info = model_to_dict(user.activity)
-                except AttributeError:
-                    activity_info = None
+                # Initialize activity_info as None
+                activity_info = None
+
+                if user.activity:
+                    # Manually construct activity_info
+                    activity_info = {
+                        # Include other fields from the activity model as needed
+                        "name": user.activity.name,  # Example regular field
+                        "category": user.activity.category.name,  # Example regular field
+                        # Handle the ImageField by converting it to its URL
+                        "image_url": request.build_absolute_uri(user.activity.image.url) if user.activity.image else None,
+                    }
 
                 social_media_info = list(user.social_media.values('platform__name', 'platform__icon_name', 'username'))
+
                 user_info.update({
                     "bio": user.bio,
                     "phoneNumber": user.phone_number,
                     "activity": activity_info,
                     "socialMedia": social_media_info,
                 })
+
+                
+            # # Additional info for providers
+            # if user.is_provider:
+            #     try:
+            #         activity_info = model_to_dict(user.activity)
+            #     except AttributeError:
+            #         activity_info = None
+
+            #     social_media_info = list(user.social_media.values('platform__name', 'platform__icon_name', 'username'))
+            #     user_info.update({
+            #         "bio": user.bio,
+            #         "phoneNumber": user.phone_number,
+            #         "activity": activity_info,
+            #         "socialMedia": social_media_info,
+            #     })
 
             csrf_token = get_token(request)  # Get or create the CSRF token
             return JsonResponse({"success": True, "user": user_info, "csrfToken": csrf_token}, status=200)

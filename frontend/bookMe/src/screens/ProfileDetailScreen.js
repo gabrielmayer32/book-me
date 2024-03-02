@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { adjustDateTimeToUTC4, adjustTimeToUTC4 } from '../../utils/utcTime';
 import GigCard from '../components/GigCard';
 import { Picker } from '@react-native-picker/picker';
+import {BACKEND_URL} from '../../utils/constants/';
 
 const ProfileDetailsScreen = ({ route }) => {
   const { providerId, businessName, activity, age, phoneNumber, socials, profileImageUrl } = route.params;
@@ -26,7 +27,8 @@ const ProfileDetailsScreen = ({ route }) => {
   const handleConfirmBooking = async () => {
     try {
       const csrfToken = await AsyncStorage.getItem('csrfToken');
-      const response = await fetch(`http://127.0.0.1:8000/gig/book/`, {
+      console.log(selectedSlots)
+      const response = await fetch(`${BACKEND_URL}/gig/book/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,7 +65,7 @@ const ProfileDetailsScreen = ({ route }) => {
     const csrfToken = await AsyncStorage.getItem('csrfToken');
     
     try {
-      const response = await fetch(`http://127.0.0.1:8000/gig/provider/${providerId}/upcoming-gigs/`, {
+      const response = await fetch(`${BACKEND_URL}/gig/provider/${providerId}/upcoming-gigs/`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -84,7 +86,7 @@ const ProfileDetailsScreen = ({ route }) => {
       }));
 
       setUpcomingGigs(adjustedGigs);
-      setSelectedSlots(data.remaining_slots)
+      // setSelectedSlots(data.remaining_slots)
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch upcoming gigs. Please try again later.');
     }

@@ -1,8 +1,10 @@
 from django.shortcuts import get_object_or_404
-from accounts.models import CustomUser  # Or your custom user model
+from accounts.models import CustomUser, ExpoPushToken  # Or your custom user model
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+
+from app.utils import send_push_notification
 from .models import Booking, Gig
 from .serializers import BookingSerializer, DashboardGigInstanceSerializer, ExtendedGigSerializer, GigInstanceSerializer, GigSerializer, MainBookingSerializer
 
@@ -88,6 +90,13 @@ class BookGigView(APIView):
             status=Booking.StatusChoices.PENDING 
 
         )
+        provider_tokens = ExpoPushToken.objects.filter(user=gig_instance.gig.provider)
+        for token in provider_tokens:
+            send_push_notification(
+                token.token,
+                'New Booking',
+                f'Your gig "{gig_instance.gig.title}" has been booked.'
+            )
 
         return Response({'message': 'Booking successful.', 'booking_id': booking.id})
 from django.utils import timezone
@@ -317,6 +326,14 @@ class AcceptBookingView(APIView):
         booking = get_object_or_404(Booking, id=booking_id, gig_instance__gig__provider=request.user)
         booking.status = Booking.StatusChoices.ACCEPTED
         booking.save()
+
+        provider_tokens = ExpoPushToken.objects.filter(user=booking.user)
+        for token in provider_tokens:
+            send_push_notification(
+                token.token,
+                'New Booking',
+                f'{request.user} has accepted your booking.'
+            )
         return Response({"message": "Booking accepted."}, status=status.HTTP_200_OK)
 
 class DeclineBookingView(APIView):

@@ -9,6 +9,7 @@ import { adjustDateTimeToUTC4, adjustTimeToUTC4 } from "../../utils/utcTime";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import MapView, { Marker } from 'react-native-maps';
+import {BACKEND_URL} from '../../utils/constants/';
 
 import moment from 'moment';
 
@@ -58,7 +59,7 @@ const GigItemBis = React.memo(({ gig, address, title, maxPeople }) => {
         const csrfToken = await AsyncStorage.getItem('csrfToken');
 
         try {
-            const response = await fetch(`http://127.0.0.1:8000/gig/delete/${gig.id}/`, {
+            const response = await fetch(`${BACKEND_URL}/gig/delete/${gig.id}/`, {
                 method: 'DELETE', // Use the DELETE method
                 headers: {
                     'X-CSRFToken': csrfToken,
@@ -91,7 +92,7 @@ const GigItemBis = React.memo(({ gig, address, title, maxPeople }) => {
 
     
         try {
-            const response = await fetch(`http://127.0.0.1:8000/gig/update/${gig.id}/`, {
+            const response = await fetch(`${BACKEND_URL}/gig/update/${gig.id}/`, {
                 method: 'PATCH', // or 'PATCH' if partially updating
                 headers: {
                     'Content-Type': 'application/json',

@@ -1,4 +1,20 @@
 {
-  "name": "bookMe",
-  "displayName": "bookMe"
+  "expo": {
+    "name": "bookMe",
+    "slug": "bookMe",
+    "extra": {
+      "eas": {
+        "projectId": "cab1a67b-dd94-4b1f-a03a-121ab6e4007e"
+      }
+    },
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/cab1a67b-dd94-4b1f-a03a-121ab6e4007e"
+    },
+    "android": {},
+    "ios": {}
+  },
+  "updates": {
+    "fallbackToCacheTimeout": 0
+  }
 }

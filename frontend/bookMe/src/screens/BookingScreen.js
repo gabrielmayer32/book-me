@@ -7,6 +7,7 @@ import moment from 'moment'; // Import moment
 import { Menu, Provider } from 'react-native-paper';
 import { Alert } from 'react-native';
 import BookingItem from '../components/BookingItem';
+import {BACKEND_URL} from '../../utils/constants/';
 
 const BookingsScreen = () => {
     const { userInfo } = useUser();
@@ -17,7 +18,7 @@ const BookingsScreen = () => {
         const fetchBookings = async () => {
             try {
                 // Adjust this URL to match your API endpoint
-                const response = await axios.get(`http://127.0.0.1:8000/gig/bookings/user/${userInfo.id}/`);
+                const response = await axios.get(`${BACKEND_URL}/gig/bookings/user/${userInfo.id}/`);
                 const adjustedBookings = response.data.map(booking => ({
                     ...booking,
                     // Adjust start and end time by adding 4 hours to each

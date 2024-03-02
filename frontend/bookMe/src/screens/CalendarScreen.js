@@ -17,6 +17,7 @@ import axios from "axios"; // Assuming you're using axios for HTTP requests
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import MapView, { Marker } from "react-native-maps"; // Ensure MapView and Marker are imported
 import DateTimePicker from '@react-native-community/datetimepicker';
+import {BACKEND_URL} from '../../utils/constants/';
 
 const daysOfWeek = [
   "Sunday",
@@ -131,7 +132,7 @@ const CalendarScreen = ({ navigation, userInfo }) => {
         .substring(0, 5);
       const csrfToken = await AsyncStorage.getItem("csrfToken");
       const response = await axios.post(
-        "http://127.0.0.1:8000/gig/create/",
+        `${BACKEND_URL}/gig/create/`,
         {
           title,
           description,
