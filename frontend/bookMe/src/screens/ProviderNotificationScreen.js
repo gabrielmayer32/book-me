@@ -44,7 +44,6 @@ const ProviderNotificationScreen = ({ navigation }) => {
               'Content-Type': 'application/json',
               'X-CSRFToken': csrfToken,
             } }); // Replace with your token
-            Alert.alert('Success', 'Booking accepted.');
             fetchBookingRequests();
             navigation.navigate('ProviderDashboard');
         } catch (error) {
@@ -56,14 +55,14 @@ const ProviderNotificationScreen = ({ navigation }) => {
     const handleDeclineBooking = async (bookingId) => {
         try {
           const csrfToken = await AsyncStorage.getItem('csrfToken');
-            await axios.patch(`${BACKEND_URL}/gig/decling-booking/${bookingId}/`, 
+            await axios.post(`${BACKEND_URL}/gig/decline-booking/${bookingId}/`, 
             { status: 'declined' }, 
             { headers: {
               'Content-Type': 'application/json',
               'X-CSRFToken': csrfToken,
             } }); // Replace with your token
-            Alert.alert('Success', 'Booking declined.');
-            // Optionally refresh the booking requests list
+            fetchBookingRequests();
+            navigation.navigate('ProviderDashboard');
         } catch (error) {
             console.error('Failed to decline booking:', error);
             Alert.alert('Error', 'Failed to decline booking.');

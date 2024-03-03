@@ -10,8 +10,9 @@ const BookingRequestItem = ({ request, handleAcceptBooking, handleDeclineBooking
         <View style={styles.bookingRequestItem}>
             <View style={styles.header}>
             <View style={styles.titleAndAddress}>
-        <Text style={styles.bookingTitle}>
-          <Text>{request.gig_instance_details.gig_title}</Text>
+          <Text style={styles.bookingTitle}>{request.gig_instance_details.gig_title}</Text>
+
+        <Text style={styles.detailText}>
           {'\n'}
           <Text>{adjustDateTimeToUTC4(request.gig_instance_details.date).format('LL')}</Text>
           {'\n'}
@@ -35,13 +36,20 @@ const BookingRequestItem = ({ request, handleAcceptBooking, handleDeclineBooking
 
 
             </View>
+
+           
+
+
             <View style={styles.requestActions}>
-                <TouchableOpacity onPress={() => handleAcceptBooking(request.id)} style={styles.acceptButton}>
-                    <Text>Accept</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDeclineBooking(request.id)} style={styles.declineButton}>
-                    <Text>Decline</Text>
-                </TouchableOpacity>
+            <TouchableOpacity style={styles.createButton} onPress={() => handleAcceptBooking(request.id)}>
+              <Icon name="check" size={20} color="white" />
+              <Text style={styles.createButtonText}>Accept</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelButton} onPress={() => handleDeclineBooking(request.id)}>
+              <Icon name="cancel" size={20} color="white" />
+              <Text style={styles.createButtonText}>Decline</Text>
+            </TouchableOpacity>
+              
             </View>
         </View>
     );
@@ -66,6 +74,28 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 5,
+      },
+      createButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#4F8EF7',
+        padding: 10,
+        borderRadius: 20,
+        justifyContent: 'center',
+        margin: 10,
+      },
+      cancelButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#E1341E',
+        padding: 10,
+        borderRadius: 20,
+        justifyContent: 'center',
+        margin: 10,
+      },
+      createButtonText: {
+        color: 'white',
+        // marginLeft: 5,
       },
     header: {
       marginBottom: 10, // Space between the header and the details section

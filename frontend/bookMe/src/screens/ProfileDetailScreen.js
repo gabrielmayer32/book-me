@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import { View, Text, StyleSheet, Image, Modal, TouchableOpacity, Linking,Pressable,  ScrollView} from 'react-native';
+import { View, Text, StyleSheet, Image, Modal, TouchableOpacity, Linking, ScrollView} from 'react-native';
 import { Card, Button } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Import icons
 import ScreenLayout from '../components/ScreenLayout'; // Adjust the import path as necessary
@@ -18,8 +18,13 @@ const ProfileDetailsScreen = ({ route }) => {
   const [selectedGigInstanceId, setSelectedGigInstanceId] = useState(null);
 
   const handleBookPress = (gigInstanceId) => {
-    setSelectedGigInstanceId(gigInstanceId); // Store the selected gig instance ID
-    setBookingModalVisible(true); // Show the booking modal
+    const selectedGig = upcomingGigs.find(gig => gig.id === gigInstanceId);
+    if (selectedGig) {
+      setSelectedSlots(1); // Reset selected slots to 1 every time a new booking is initiated
+      setMaxSlots(selectedGig.remaining_slots); // Update the maximum slots available for booking
+      setSelectedGigInstanceId(gigInstanceId); // Store the selected gig instance ID
+      setBookingModalVisible(true); // Show the booking modal
+    }
   };
   
 
@@ -84,7 +89,7 @@ const ProfileDetailsScreen = ({ route }) => {
         start_time: gig.start_time ? adjustTimeToUTC4(gig.start_time).format("HH:mm") : gig.start_time,
         end_time: gig.end_time ? adjustTimeToUTC4(gig.end_time).format("HH:mm") : gig.end_time,
       }));
-
+      console.log(adjustedGigs)
       setUpcomingGigs(adjustedGigs);
       // setSelectedSlots(data.remaining_slots)
     } catch (error) {
@@ -196,13 +201,14 @@ const ProfileDetailsScreen = ({ route }) => {
             <Text style={styles.modalText}>Choose how many places you book </Text>
 
             <Picker
-              selectedValue={selectedGigInstanceId.remaining_slots}
-              style={styles.pickerStyle}
-              onValueChange={(itemValue) => setSelectedSlots(itemValue)}>
-              {[...Array(selectedGigInstanceId.remaining_slots).keys()].map(n => (
-                <Picker.Item key={n+1} label={`${n+1}`} value={n+1} />
-              ))}
-            </Picker>
+  selectedValue={selectedSlots}
+  style={styles.pickerStyle}
+  onValueChange={(itemValue, itemIndex) => setSelectedSlots(itemValue)}>
+  {[...Array(maxSlots).keys()].map(n => (
+    <Picker.Item key={n+1} label={`${n+1}`} value={n+1} />
+  ))}
+</Picker>
+
             <TouchableOpacity onPress={() => handleConfirmBooking(selectedGigInstanceId)} style={styles.confirmButton}>
               <Text style={styles.confirmButtonText}>Confirm <Icon name="check" size={20} color="white" /></Text>
             </TouchableOpacity>

@@ -142,9 +142,10 @@ const fetchBookingRequests = async () => {
       {upcomingGigs.length > 0 ? (
         <FlatList
           data={upcomingGigs}
-          horizontal={true} // Change FlatList direction to horizontal
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => <GigItem gig={item} />}
+          scrollEnabled={false} // Disable scrolling of the FlatList
+
         />
       
       ) : (

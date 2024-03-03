@@ -37,10 +37,14 @@ const HomeScreen = () => {
   const baseURL = `${BACKEND_URL}`;
   const renderActivities = () => {
     return (
+      <ScrollView style={{ flex: 1 }}>
+
+    
       <FlatList
         data={activities}
         horizontal={true}
         keyExtractor={item => item.id.toString()}
+        
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => {
             navigation.navigate('ActivityCollaborators', { 
@@ -66,6 +70,7 @@ const HomeScreen = () => {
         style={styles.activitiesList} 
         showsHorizontalScrollIndicator={false}
       />
+         </ScrollView>
     );
   };
   
@@ -150,6 +155,8 @@ const HomeScreen = () => {
 
 
   return (
+    <ScrollView style={{ flex: 1 }}>
+
     <View>
       <Text style={styles.collaboratorsTitle}>{`${greeting()}, ${userName} `}</Text>
                 <View style={styles.weatherContainer}>
@@ -196,6 +203,7 @@ const HomeScreen = () => {
         )}
       />
     </View>
+  </ScrollView>
   );
 };
   

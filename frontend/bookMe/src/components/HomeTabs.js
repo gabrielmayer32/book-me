@@ -41,17 +41,18 @@ function AppTabs() {
             }
           },
         })}
+        
       />
       <Tab.Screen name="Bookings" component={BookingsScreen} />
       <Tab.Screen
-          name="Notification"
+          name="Notifications"
           component={NotificationScreen}
           options={{
             tabBarIcon: ({ focused, color, size }) => (
               <View>
                 <Icon name={focused ? 'bell' : 'bell-outline'} size={size} color={color} />
                 {notificationCount > 0 && (
-                  <Badge style={{ position: 'absolute', top: 0, right: -6 }}>{notificationCount}</Badge>
+                  <Badge style={{ position: 'absolute', top: -6, right: -6, fontSize: 8, width: 1, }}>{notificationCount}</Badge>
                 )}
               </View>
             ),

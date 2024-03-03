@@ -23,6 +23,43 @@ from .models import Activity
 from .serializers import ActivitySerializer, CustomUserSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
+from .models import Notification
+from .serializers import NotificationSerializer
+from django.db.models import F
+from django.db.models import Value, CharField
+from django.db.models.functions import Concat
+from django.views import View
+
+class MarkNotificationsAsReadView(View):
+    def put(self, request, *args, **kwargs):
+        # Mark all notifications as read for the logged-in user
+        Notification.objects.filter(recipient=request.user, unread=True).update(unread=False)
+        return JsonResponse({'status': 'success'}, status=200)
+    
+class NotificationsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        notifications = Notification.objects.filter(recipient=request.user, is_active=True).annotate(
+            profile_picture_url=Concat(
+                Value(settings.MEDIA_URL), 
+                'provider__profile_picture', 
+                output_field=CharField()
+            )
+        )
+        serializer = NotificationSerializer(
+            notifications, many=True, context={'request': request}
+        )
+        return Response(serializer.data)
+    
+class DeleteNotificationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk, format=None):
+        notification = get_object_or_404(Notification, pk=pk, recipient=request.user)
+        notification.delete()  # Use the soft delete method
+        return Response({'status': 'success', 'message': 'Notification deleted successfully.'})
+
 
 class ActivityCollaboratorsView(APIView):
     permission_classes = [IsAuthenticated]

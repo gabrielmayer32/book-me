@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from accounts.models import CustomUser, ExpoPushToken  # Or your custom user model
+from accounts.models import CustomUser, ExpoPushToken, Notification
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -72,6 +72,8 @@ class UserBookingsView(APIView):
         serializer = BookingSerializer(bookings, many=True, context={'request': request})
         return Response(serializer.data)
 
+from django.db import transaction
+
 class BookGigView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -83,22 +85,34 @@ class BookGigView(APIView):
         if gig_instance.is_fully_booked:
             return Response({'error': 'This gig is fully booked.'}, status=400)
 
-        booking = Booking.objects.create(
-            user=request.user,
-            gig_instance=gig_instance,
-            number_of_slots=number_of_slots,
-            status=Booking.StatusChoices.PENDING 
-
-        )
-        provider_tokens = ExpoPushToken.objects.filter(user=gig_instance.gig.provider)
-        for token in provider_tokens:
-            send_push_notification(
-                token.token,
-                'New Booking',
-                f'Your gig "{gig_instance.gig.title}" has been booked.'
+        with transaction.atomic():
+            booking = Booking.objects.create(
+                user=request.user,
+                gig_instance=gig_instance,
+                number_of_slots=number_of_slots,
+                status=Booking.StatusChoices.PENDING 
             )
 
+            # Create a notification for the provider
+            Notification.objects.create(
+                recipient=gig_instance.gig.provider,
+                actor=request.user.username,  # Assuming username is a meaningful identifier
+                verb=f'booked {number_of_slots} slots in your gig',
+                description=f'Your gig "{gig_instance.gig.title}" has been booked.',
+                action_object_url=f'/gig/{gig_instance_id}/'  # Example action URL, adjust as needed
+            )
+
+            # Sending push notification
+            provider_tokens = ExpoPushToken.objects.filter(user=gig_instance.gig.provider)
+            for token in provider_tokens:
+                send_push_notification(
+                    token.token,
+                    'New Booking',
+                    f'Your gig "{gig_instance.gig.title}" has been booked.'
+                )
+
         return Response({'message': 'Booking successful.', 'booking_id': booking.id})
+
 from django.utils import timezone
 from django.db.models import ExpressionWrapper, F, DateTimeField
 from django.db.models import Count, Prefetch
@@ -170,8 +184,7 @@ class ProviderUpcomingGigsView(APIView):
         gig_instances = GigInstance.objects.filter(
             gig__provider=provider,
             date__range=[now.date(), three_months_later],
-            gig_bookings__status=Booking.StatusChoices.ACCEPTED,
-            start_time__gt=now.time()  # Ensure start time is in the future
+            gig_bookings__status=Booking.StatusChoices.ACCEPTED
         ).annotate(
             confirmed_bookings_count=Count('gig_bookings', filter=Q(gig_bookings__status=Booking.StatusChoices.ACCEPTED))
         ).prefetch_related(
@@ -201,9 +214,8 @@ class ProviderUpcomingGigsView(APIView):
                     'longitude': gig_instance.gig.longitude,
                     'address': gig_instance.gig.address,
                     'max_people': gig_instance.gig.max_people,
-                    'bookings': bookings_data,  # Include the list of bookings for this gig instance
+                    'bookings': bookings_data,
                 })
-        print(gigs_data)
         return Response(gigs_data)
     
 class UpcomingGigsView(APIView):
@@ -217,18 +229,18 @@ class UpcomingGigsView(APIView):
         now = timezone.now()
         three_months_later = now.date() + timedelta(days=90)
 
-        # First, get IDs of gigs that the user has already booked
         user_booked_gig_instance_ids = Booking.objects.filter(
             user=request.user,
-            status=Booking.StatusChoices.PENDING
+            status__in=[Booking.StatusChoices.PENDING, Booking.StatusChoices.ACCEPTED]  # Adjusted to include ACCEPTED bookings
+        ).values_list('gig_instance_id', flat=True).distinct()
 
-        ).values_list('gig_instance_id', flat=True)
+        print("User booked gig instance IDs:", user_booked_gig_instance_ids)  # Debugging
 
         potential_gigs = GigInstance.objects.filter(
             gig__provider=provider,
             date__range=[now.date(), three_months_later]
         ).exclude(
-            id__in=user_booked_gig_instance_ids  # Exclude gigs the user has already booked
+            id__in=list(user_booked_gig_instance_ids)  # Ensure proper list conversion
         ).order_by('date', 'start_time')
 
         gigs = [
@@ -241,9 +253,9 @@ class UpcomingGigsView(APIView):
             'title': gig.gig.title,
             'description': gig.gig.description,
             'date': gig.date,
-            'start_time': gig.start_time.strftime("%H:%M"),  # Adjust formatting as needed
-            'end_time': gig.end_time.strftime("%H:%M"),  # Adjust formatting as needed
-            'is_booked': gig.is_booked,
+            'start_time': gig.start_time.strftime("%H:%M"),
+            'end_time': gig.end_time.strftime("%H:%M") if gig.end_time else None,  # Adjusted for potential None values
+            'is_booked': gig.id in user_booked_gig_instance_ids,  # Direct check if this gig is booked by the user
             'remaining_slots': gig.remaining_slots,
             'latitude': gig.gig.latitude,
             'longitude': gig.gig.longitude,
@@ -251,6 +263,7 @@ class UpcomingGigsView(APIView):
         } for gig in gigs]
 
         return Response(gigs_data)
+
 
 class CreateGigView(APIView):
     permission_classes = [IsAuthenticated]
@@ -323,17 +336,30 @@ class AcceptBookingView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, booking_id):
-        booking = get_object_or_404(Booking, id=booking_id, gig_instance__gig__provider=request.user)
-        booking.status = Booking.StatusChoices.ACCEPTED
-        booking.save()
+        with transaction.atomic():
+            booking = get_object_or_404(Booking, id=booking_id, gig_instance__gig__provider=request.user)
+            booking.status = Booking.StatusChoices.ACCEPTED
+            booking.save()
 
-        provider_tokens = ExpoPushToken.objects.filter(user=booking.user)
-        for token in provider_tokens:
-            send_push_notification(
-                token.token,
-                'New Booking',
-                f'{request.user} has accepted your booking.'
+            # Create a notification for the booking user
+            notification = Notification.objects.create(
+                recipient=booking.user,
+                provider=request.user,
+                actor=request.user.business_name,  # or `request.user.get_full_name()` depending on your preference
+                verb='accepted your booking',
+                description=f'Your booking for "{booking.gig_instance.gig.title}" has been accepted.',
+                action_object_url=f'/gig/{booking.gig_instance.id}/'  # Adjust URL as necessary for your frontend
             )
+
+            # Sending push notification
+            provider_tokens = ExpoPushToken.objects.filter(user=booking.user)
+            for token in provider_tokens:
+                send_push_notification(
+                    token.token,
+                    'Booking Accepted',
+                    f'{request.user.username} has accepted your booking for "{booking.gig_instance.gig.title}".'
+                )
+
         return Response({"message": "Booking accepted."}, status=status.HTTP_200_OK)
 
 class DeclineBookingView(APIView):
@@ -342,7 +368,26 @@ class DeclineBookingView(APIView):
     def post(self, request, booking_id):
         booking = get_object_or_404(Booking, id=booking_id, gig_instance__gig__provider=request.user)
         booking.status = Booking.StatusChoices.DECLINED
+        booking.number_of_slots = 0
         booking.save()
+        # Create a notification for the booking user
+        notification = Notification.objects.create(
+            recipient=booking.user,
+            provider=request.user,
+            actor=request.user.business_name,  # or `request.user.get_full_name()` depending on your preference
+            verb='declined your booking',
+            description=f'Your booking for "{booking.gig_instance.gig.title}" has been declined.',
+            action_object_url=f'/gig/{booking.gig_instance.id}/'  # Adjust URL as necessary for your frontend
+        )
+
+        # Sending push notification
+        provider_tokens = ExpoPushToken.objects.filter(user=booking.user)
+        for token in provider_tokens:
+            send_push_notification(
+                token.token,
+                'Booking Declined',
+                f'{request.user.username} has declined your booking for "{booking.gig_instance.gig.title}".'
+            )
         return Response({"message": "Booking declined."}, status=status.HTTP_200_OK)
     
 

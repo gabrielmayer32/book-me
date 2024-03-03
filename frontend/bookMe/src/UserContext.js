@@ -1,5 +1,6 @@
 // In UserContext.js
 import React, { createContext, useContext, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const UserContext = createContext();
 
@@ -12,7 +13,10 @@ export const UserProvider = ({ children }) => {
   };
 
   const resetNotificationCount = () => {
-    setNotificationCount(0); // Reset the count to 0
+    setNotificationCount(0);
+    // If using AsyncStorage to track notification count,
+    // ensure you reset it there too.
+    AsyncStorage.setItem('notificationCount', JSON.stringify(0));
   };
 
   // Ensure notificationCount is included here

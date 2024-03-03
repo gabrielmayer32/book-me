@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Button , TouchableOpacity, Image, ScrollView,Linking, FlatList, StyleSheet} from 'react-native';
+import React, { useState, useEffect, useCallback} from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+
+import { View, Text, Button , TouchableOpacity, ScrollView,Linking, FlatList, StyleSheet} from 'react-native';
 import { useUser } from '../UserContext';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -14,7 +16,8 @@ const BookingsScreen = () => {
     const [bookings, setBookings] = useState([]);
     const [menuVisible, setMenuVisible] = useState(false);
 
-    useEffect(() => {
+    useFocusEffect(
+        useCallback(() => {
         const fetchBookings = async () => {
             try {
                 // Adjust this URL to match your API endpoint
@@ -31,7 +34,8 @@ const BookingsScreen = () => {
             }
         };
         fetchBookings();
-    }, [userInfo.id]);
+    }, [userInfo.id]) // Consider adding more dependencies if there are other factors that should trigger the data fetch
+    );
 
     const handleCancelBooking = async (bookingId) => {
         try {
