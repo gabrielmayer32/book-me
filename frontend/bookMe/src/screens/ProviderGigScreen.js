@@ -171,7 +171,7 @@ const ProviderGigsScreen = ({ navigation }) => {
   
   
   
-  const renderGigItem = ({ item }) => (
+  const renderGigItem = ({ item, navigation }) => (
     <GigItem
       item={item}
       onEditPress={() => navigation.navigate('EditGig', { gigId: item.id })}

@@ -10,6 +10,7 @@ import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import { useUser } from '../UserContext';
 import { Badge } from 'react-native-paper';
+import LogoutButton from '../components/LogoutButton'; // Adjust with your actual logout button component path
 
 const Tab = createBottomTabNavigator();
 
@@ -36,6 +37,7 @@ function AppTabs() {
         name="Home" 
         options={{
           title: 'Home',
+          headerRight: () => <LogoutButton navigation={navigation} />,
           headerStyle: { backgroundColor: '#4F8EF7' },
           headerTintColor: 'white',
         }}
@@ -53,6 +55,7 @@ function AppTabs() {
       <Tab.Screen name="Bookings" 
       options={{
         title: 'Bookings',
+        headerRight: () => <LogoutButton navigation={navigation} />,
         headerStyle: { backgroundColor: '#4F8EF7' },
         headerTintColor: 'white',
       }}
@@ -63,6 +66,7 @@ function AppTabs() {
           component={NotificationScreen}
           options={{
             title: 'Notifications',
+            headerRight: () => <LogoutButton navigation={navigation} />,
             headerStyle: { backgroundColor: '#4F8EF7' },
             headerTintColor: 'white',
 

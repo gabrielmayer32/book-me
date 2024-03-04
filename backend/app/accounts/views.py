@@ -227,3 +227,19 @@ def service_providers_list(request):
         providers_list.append(provider_dict)
 
     return JsonResponse({'providers': providers_list})
+
+from django.contrib.auth import logout
+from .models import ExpoPushToken
+
+class LogoutView(APIView):
+    def post(self, request, *args, **kwargs):
+        # Retrieve the user's Expo Push Token
+        expo_push_tokens = ExpoPushToken.objects.filter(user=request.user)
+        print(expo_push_tokens)
+        # Delete the tokens to disassociate them from the user
+        expo_push_tokens.delete()
+        
+        # Logout the user
+        logout(request)
+        
+        return Response({"success": "User logged out successfully"}, status=status.HTTP_200_OK)

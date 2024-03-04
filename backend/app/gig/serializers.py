@@ -45,6 +45,7 @@ class BookingSerializer(serializers.ModelSerializer):
     gig_end_time = serializers.ReadOnlyField(source='gig_instance.end_time')
     gig_date = serializers.ReadOnlyField(source='gig_instance.date')
     provider_name = serializers.ReadOnlyField(source='gig_instance.gig.provider.fist_name')
+    provider_phone_number = serializers.ReadOnlyField(source='gig_instance.gig.provider.phone_number')
     latitude = serializers.ReadOnlyField(source='gig_instance.gig.latitude')
     longitude = serializers.ReadOnlyField(source='gig_instance.gig.longitude')
     provider_profile_picture = serializers.SerializerMethodField()
@@ -54,7 +55,7 @@ class BookingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Booking
-        fields = ['id', 'gig_title', 'gig_date', 'gig_start_time', 'gig_end_time', 'provider_name', 'booked_on', 'address', 'number_of_slots', 'status', 'latitude', 'longitude', 'provider_profile_picture', 'provider_name']
+        fields = ['id', 'gig_title', 'gig_date', 'gig_start_time', 'gig_end_time', 'provider_phone_number', 'provider_name', 'booked_on', 'address', 'number_of_slots', 'status', 'latitude', 'longitude', 'provider_profile_picture', 'provider_name']
         # Include any other fields you think are necessary for the frontend.
 
     def get_provider_profile_picture(self, obj):

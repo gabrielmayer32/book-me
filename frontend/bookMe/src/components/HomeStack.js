@@ -5,12 +5,13 @@ import HomeScreen from '../screens/HomeScreen';
 import ProfileDetailScreen from '../screens/ProfileDetailScreen';
 import CalendarScreen from '../screens/CalendarScreen';
 import ActivityCollaborators from '../screens/ActivityCollaboratorsScreen';
+import LogoutButton from '../components/LogoutButton'; // Adjust with your actual logout button component path
 
 const HomeStack = createStackNavigator();
 
 function HomeStackScreen() {
   return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+    <HomeStack.Navigator screenOptions={{  headerShown: false }}>
       <HomeStack.Screen name="HomeStackHome" component={HomeScreen} />
       <HomeStack.Screen name="ProfileDetails" component={ProfileDetailScreen} />
       <HomeStack.Screen name="Calendar" component={CalendarScreen} />

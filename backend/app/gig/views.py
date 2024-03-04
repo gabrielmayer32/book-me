@@ -484,3 +484,14 @@ class GigUpdateAPIView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@method_decorator(csrf_exempt, name='dispatch')
+class UpdateTemplateStatus(View):
+    def post(self, request, gig_id):
+        try:
+            gig = Gig.objects.get(id=gig_id)
+            gig.is_template = False
+            gig.save()
+            return JsonResponse({"message": "Gig updated successfully"}, status=200)
+        except Gig.DoesNotExist:
+            return JsonResponse({"error": "Gig not found"}, status=404)

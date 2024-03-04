@@ -111,13 +111,13 @@ const swipableStyles = StyleSheet.create({
     alignItems: 'center', // Center items vertically
     paddingVertical: 20,
     paddingHorizontal: 10,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: '#cccccc',
     backgroundColor: 'white',
   },
   leftContainer: {
     flexDirection: 'row',
-    alignItems: 'center', // Center items vertically
+    alignItems: 'center', 
   },
   unreadIndicator: {
     height: 10,
@@ -130,22 +130,25 @@ const swipableStyles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    margin: 10,
+    margin: 5,
   },
   contentContainer: {
     flex: 1,
+    paddingHorizontal: 10,
     justifyContent: 'center', // Center content vertically
   },
   notificationTextUser: {
     fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 4, // Space between the username and the description
+    marginBottom: 5, // Space between the username and the description
   },
   notificationText: {
-    fontSize: 16,
+    fontSize: 14,
+    
   },
   timeAgo: {
     fontSize: 12,
+    
     color: '#666',
   },
   // Rest of your styles...
@@ -163,16 +166,8 @@ const swipableStyles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  notificationText: {
-    fontSize: 16,
-  },
-  notificationTextUser: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    textAlign: 'left',
-    alignSelf: 'flex-start', // Align the text to the start of the container
-    // Align the text at the start
-  }
+
+  
 });
 
 

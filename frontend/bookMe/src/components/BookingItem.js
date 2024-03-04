@@ -4,6 +4,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import moment from 'moment';
 import { Menu, Provider } from 'react-native-paper';
+import { Linking } from 'react-native';
 
 const getStatusColor = ({ status }) => {
     let backgroundColor;
@@ -26,7 +27,6 @@ const getStatusColor = ({ status }) => {
   
 
   const BookingItem = ({ item, handleNavigateToLocation, handleCancelBooking }) => {
-
     const [menuVisible, setMenuVisible] = useState(false);
     const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
@@ -34,38 +34,57 @@ const getStatusColor = ({ status }) => {
     const closeMenu = () => setMenuVisible(false);
     const statusColor = getStatusColor(item.status); // Define getStatusColor accordingly
     const moreIconRef = React.useRef(null);
-    const toggleMenuVisibility = () => {
-        setMenuVisible(!menuVisible);
-    };
+    const toggleMenuVisibility = () => setMenuVisible(!menuVisible);
+    console.log(item);
     return (
         <View style={styles.bookingItem}>
-             <View style={styles.header}>
-        <Image source={{ uri: item.provider_profile_picture }} style={styles.profilePic} />
-        <View style={styles.titleAndAddress}>
-          <Text style={styles.bookingTitle}>{item.gig_title} with {item.provider_name}</Text>
-          <Text style={styles.address}>{item.address}</Text>
-        </View>        
-        <TouchableOpacity
-    ref={moreIconRef}
-    style={styles.moreIcon}
-    onPress={() => {
-        moreIconRef.current.measure((fx, fy, width, height, px, py) => {
-            setMenuVisible(true);
-            setMenuPosition({ x: px + width / 2, y: py + height / 2 }); // Center the menu based on the icon position
-        });
-    }}>
-    <Icon name="dots-vertical" size={24} color="#000" />
-</TouchableOpacity>
-      </View>
-           
-            
-                <Menu
-              visible={menuVisible}
-              onDismiss={toggleMenuVisibility}
-              anchor={menuPosition}>
-              <Menu.Item onPress={() => { handleNavigateToLocation(item.latitude, item.longitude); toggleMenuVisibility(); }} title="Get me there" />
-              <Menu.Item onPress={() => { handleCancelBooking(item.id); toggleMenuVisibility(); }} title="Cancel Booking" />
-          </Menu>
+            <View style={styles.header}>
+                <Image source={{ uri: item.provider_profile_picture }} style={styles.profilePic} />
+                <View style={styles.titleAndAddress}>
+                    <Text style={styles.bookingTitle}>{item.gig_title} with {item.provider_name}</Text>
+                    <Text style={styles.address}>{item.address}</Text>
+                </View>        
+                {item.status === 'accepted' && ( // Conditionally render this block
+                    <TouchableOpacity
+                        ref={moreIconRef}
+                        style={styles.moreIcon}
+                        onPress={() => {
+                            moreIconRef.current.measure((fx, fy, width, height, px, py) => {
+                                setMenuVisible(true);
+                                setMenuPosition({ x: px + width / 2, y: py + height / 2 }); // Center the menu based on the icon position
+                            });
+                        }}>
+                        <Icon name="dots-vertical" size={24} color="#000" />
+                    </TouchableOpacity>
+                )}
+            </View>
+            <Menu
+    visible={menuVisible}
+    onDismiss={closeMenu}
+    anchor={menuPosition}>
+    <Menu.Item onPress={() => { handleNavigateToLocation(item.latitude, item.longitude); closeMenu(); }} title="Get me there" />
+    
+    <Menu.Item 
+        onPress={() => {
+            // Remove all spaces and dashes, ensure it starts with '+'
+            const phoneNumber = item.provider_phone_number.replace(/[\s-]+/g, '');
+            const formattedPhoneNumber = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
+            Linking.openURL(`https://wa.me/${formattedPhoneNumber}?text=I'm%20interested%20in%20discussing%20the%20booking.`);
+            closeMenu();
+        }} 
+        title="Send a Message on WhatsApp" 
+    />
+    <Menu.Item 
+        onPress={() => {
+            // Remove all spaces and dashes
+            const phoneNumber = item.provider_phone_number.replace(/[\s-]+/g, '');
+            Linking.openURL(`tel:${phoneNumber}`);
+            closeMenu();
+        }} 
+        title="Call Provider" 
+    />
+</Menu>
+
 
             <View style={styles.details}>
 
@@ -96,6 +115,8 @@ const getStatusColor = ({ status }) => {
         </View>
     );
 };
+
+
 
 const styles = StyleSheet.create({
     detailRow: {

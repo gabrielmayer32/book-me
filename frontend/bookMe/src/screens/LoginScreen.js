@@ -41,8 +41,10 @@ const LoginScreen = ({ navigation }) => {
           console.error("Expo Push Token is not available.");
         }
   
-        navigation.navigate(result.user.isProvider ? 'ProviderDashboard' : 'HomeTabs');
-  
+        navigation.reset({
+          index: 0,
+          routes: [{ name: result.user.isProvider ? 'ProviderDashboard' : 'HomeTabs' }],
+        });  
       } else {
         // Handle login failure
         alert(result.message);
