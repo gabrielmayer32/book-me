@@ -10,6 +10,7 @@ import axios from 'axios';
 import {Button} from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {BACKEND_URL} from '../../utils/constants/';
+import CachedImage from 'expo-cached-image';
 
 
 
@@ -62,6 +63,7 @@ const HomeScreen = () => {
             });
           }}>
           <View style={styles.activityContainer}>
+            
             <Image source={{ uri: baseURL + item.image, cache: 'force-cache'  }} style={styles.activityImage} />
             <Text style={styles.activityName}>{item.name}</Text>
           </View>

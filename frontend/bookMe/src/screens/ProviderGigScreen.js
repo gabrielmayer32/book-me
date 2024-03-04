@@ -15,6 +15,14 @@ const ProviderGigsScreen = ({ navigation }) => {
   const [gigs, setGigs] = useState([]);
   const { userInfo } = useUser();
   const [templates, setTemplates] = useState([]);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+
+  const toggleDescription = () => {
+
+      setIsDescriptionExpanded(!isDescriptionExpanded);
+
+  };
+
 
   const fetchTemplates = async () => {
     try {
@@ -103,8 +111,11 @@ const ProviderGigsScreen = ({ navigation }) => {
         <View style={styles.gigInfo}>
           <Text style={styles.title}>{item.title}</Text>
           <View style={styles.detailRow}>
-            <Icon name="information" size={20} color="#4F8EF7" />
-            <Text style={styles.details}>{item.description}</Text>
+         <TouchableOpacity style={styles.descriptionRow} onPress={toggleDescription}>
+                  <Icon name="information" size={20} color="#4F8EF7" />
+                  <Text style={styles.itemDescription} numberOfLines={isDescriptionExpanded ? 0 : 2}>{item.description}</Text>
+              </TouchableOpacity>
+            
           </View>
           <View style={styles.detailRow}>
             <Icon name="clock-start" size={20} color="#4F8EF7" />
@@ -146,9 +157,7 @@ const ProviderGigsScreen = ({ navigation }) => {
 </View>
 
         </View>
-        <TouchableOpacity onPress={onEditPress} style={styles.editButton}>
-          <Icon name="replay" size={24} color="#4F8EF7" />
-        </TouchableOpacity>
+
         <TouchableOpacity onPress={() => onPress(item)} style={styles.editButton}>
           <Icon name="arrow-right" size={24} color="#4F8EF7" />
         </TouchableOpacity>

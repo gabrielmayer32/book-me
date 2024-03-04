@@ -48,7 +48,6 @@ const SwipeableNotificationItem = ({ item, onDelete }) => {
     })
     .catch(error => console.error('Error:', error));
   };
-  
 
   useEffect(() => {
     // When the component loses focus, mark notifications as read
@@ -84,8 +83,6 @@ const SwipeableNotificationItem = ({ item, onDelete }) => {
     }
     onDelete(item.id);
   };
-
-  
 
   return (
     <Swipeable

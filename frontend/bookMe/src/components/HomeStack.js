@@ -11,7 +11,7 @@ const HomeStack = createStackNavigator();
 function HomeStackScreen() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
-      <HomeStack.Screen name="Home" component={HomeScreen} />
+      <HomeStack.Screen name="HomeStackHome" component={HomeScreen} />
       <HomeStack.Screen name="ProfileDetails" component={ProfileDetailScreen} />
       <HomeStack.Screen name="Calendar" component={CalendarScreen} />
       <HomeStack.Screen name="ActivityCollaborators" component={ActivityCollaborators} />
