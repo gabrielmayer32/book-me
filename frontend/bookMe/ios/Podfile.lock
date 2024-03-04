@@ -940,6 +940,8 @@ PODS:
   - React-Mapbuffer (0.73.4):
     - glog
     - React-debug
+  - react-native-add-calendar-event (5.0.0):
+    - React-Core
   - react-native-geolocation (3.1.0):
     - React-Core
   - react-native-maps (1.10.0):
@@ -1195,6 +1197,7 @@ DEPENDENCIES:
   - React-jsinspector (from `../node_modules/react-native/ReactCommon/jsinspector-modern`)
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
+  - react-native-add-calendar-event (from `../node_modules/react-native-add-calendar-event`)
   - "react-native-geolocation (from `../node_modules/@react-native-community/geolocation`)"
   - react-native-maps (from `../node_modules/react-native-maps`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
@@ -1325,6 +1328,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/logger"
   React-Mapbuffer:
     :path: "../node_modules/react-native/ReactCommon"
+  react-native-add-calendar-event:
+    :path: "../node_modules/react-native-add-calendar-event"
   react-native-geolocation:
     :path: "../node_modules/@react-native-community/geolocation"
   react-native-maps:
@@ -1437,6 +1442,7 @@ SPEC CHECKSUMS:
   React-jsinspector: 9ac353eccf6ab54d1e0a33862ba91221d1e88460
   React-logger: 0a57b68dd2aec7ff738195f081f0520724b35dab
   React-Mapbuffer: 63913773ed7f96b814a2521e13e6d010282096ad
+  react-native-add-calendar-event: b9802a8be8ad4beb0dcb3efb28969c077558fb29
   react-native-geolocation: ef66fb798d96284c6043f0b16c15d9d1d4955db4
   react-native-maps: b4c3b092b1c71240d8d4792bae3738828942f14a
   react-native-safe-area-context: 0ee144a6170530ccc37a0fd9388e28d06f516a89

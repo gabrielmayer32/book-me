@@ -8,6 +8,10 @@ import { adjustDateTimeToUTC4, adjustTimeToUTC4 } from '../../utils/utcTime';
 import GigCard from '../components/GigCard';
 import { Picker } from '@react-native-picker/picker';
 import {BACKEND_URL} from '../../utils/constants/';
+import { Checkbox } from 'react-native-paper'; // Assuming you are using react-native-paper
+import {addEventToCalendar} from '../components/addEventToCalendar'; // Import the function to add event to calendar
+import * as Calendar from 'expo-calendar';
+import snackbarManager from '../../utils/snackbarManager';
 
 const ProfileDetailsScreen = ({ route }) => {
   const { providerId, businessName, activity, age, phoneNumber, socials, profileImageUrl } = route.params;
@@ -17,9 +21,10 @@ const ProfileDetailsScreen = ({ route }) => {
   const [maxSlots, setMaxSlots] = useState(5); // Example max slots, this should come from gig data
   const [selectedGigInstanceId, setSelectedGigInstanceId] = useState(null);
   const [isSubscribed, setIsSubscribed] = useState(route.params.is_subscribed);
+  const [addToCalendar, setAddToCalendar] = useState(false);
+  const [isBookingInProgress, setIsBookingInProgress] = useState(false);
+  const [selectedGigDetails, setSelectedGigDetails] = useState(null);
 
-  console.log('HERE');
-  console.log(route.params)
   const handleToggleSubscription = async () => {
     const providerId = route.params.providerId;
     const csrfToken = await AsyncStorage.getItem('csrfToken');
@@ -45,24 +50,106 @@ const ProfileDetailsScreen = ({ route }) => {
     }
 };
 
+const confirmBookingAndAddToCalendar = async () => {
+  if (isBookingInProgress) return;
 
+  setIsBookingInProgress(true);
 
-  const handleBookPress = (gigInstanceId) => {
-    const selectedGig = upcomingGigs.find(gig => gig.id === gigInstanceId);
-    if (selectedGig) {
-      setSelectedSlots(1); // Reset selected slots to 1 every time a new booking is initiated
-      setMaxSlots(selectedGig.remaining_slots); // Update the maximum slots available for booking
-      setSelectedGigInstanceId(gigInstanceId); // Store the selected gig instance ID
-      setBookingModalVisible(true); // Show the booking modal
+  try {
+    let eventId = null; // Initialize eventId as null
+
+    if (addToCalendar && selectedGigDetails) {
+      const dateOnly = selectedGigDetails.date.split("T")[0];
+      
+      let startDate = new Date(`${dateOnly}T${selectedGigDetails.start_time}:00.000Z`);
+      let endDate = new Date(`${dateOnly}T${selectedGigDetails.end_time}:00.000Z`);
+      
+      startDate.setHours(startDate.getHours() - 4);
+      endDate.setHours(endDate.getHours() - 4);
+
+      const eventDetails = {
+        title: selectedGigDetails.title,
+        startDate: startDate,
+        endDate: endDate,
+        notes: selectedGigDetails.description,
+        location: selectedGigDetails.address,
+      };
+
+      // Directly capture the eventId returned by addEventToCalendar
+      eventId = await addEventToCalendar(eventDetails);
+      console.log(`Event ID: ${eventId}`);
     }
-  };
+
+    // Now, call handleConfirmBooking and include eventId
+    await handleConfirmBooking(eventId);
+
+    fetchUpcomingGigs();
+  } catch (error) {
+    console.error('Error booking gig:', error);
+    alert('Error booking gig. Please try again.');
+  } finally {
+    setIsBookingInProgress(false);
+    setBookingModalVisible(false);
+  }
+};
+
+
+const addEventToCalendar = async (eventDetails) => {
+  const { status } = await Calendar.requestCalendarPermissionsAsync();
+  if (status !== 'granted') {
+    console.warn("Calendar permission not granted.");
+    return;
+  }
+
+  const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+  const defaultCalendar = calendars.find(c => c.allowsModifications);
+
+  if (!defaultCalendar) {
+    console.warn("No modifiable calendars found.");
+    return;
+  }
+
+  // Create the event in the calendar
+  const eventId = await Calendar.createEventAsync(defaultCalendar.id, {
+    title: eventDetails.title,
+    startDate: eventDetails.startDate,
+    endDate: eventDetails.endDate,
+    notes: eventDetails.notes,
+    location: eventDetails.location,
+  });
+  
+  console.log(`Creating event with start date: ${eventDetails.startDate.toISOString()} and end date: ${eventDetails.endDate.toISOString()}`);
+
+  console.log(`Event created with ID: ${eventId}`);
+
+  return eventId;
+};
+
+
+
+
+const handleBookPress = (gigInstanceId) => {
+  const selectedGig = upcomingGigs.find(gig => gig.id === gigInstanceId);
+  if (selectedGig) {
+    setSelectedSlots(1); // Reset selected slots to 1
+    setMaxSlots(selectedGig.remaining_slots);
+    setSelectedGigInstanceId(gigInstanceId);
+    setSelectedGigDetails(selectedGig); // Save the entire gig object for later use
+    setBookingModalVisible(true);
+  }
+};
+
+
   
 
 
-  const handleConfirmBooking = async () => {
+const handleConfirmBooking = async (eventId) => {
+  // Prevent multiple bookings if one is already in progress
+    if (isBookingInProgress) return;
+    setIsBookingInProgress(true);
+  
     try {
       const csrfToken = await AsyncStorage.getItem('csrfToken');
-      console.log(selectedSlots)
       const response = await fetch(`${BACKEND_URL}/gig/book/`, {
         method: 'POST',
         headers: {
@@ -70,23 +157,30 @@ const ProfileDetailsScreen = ({ route }) => {
           'X-CSRFToken': csrfToken,
         },
         body: JSON.stringify({
-          gig_instance_id: selectedGigInstanceId, // Ensure you have this state from selecting a gig
+          gig_instance_id: selectedGigInstanceId,
           number_of_slots: selectedSlots,
+          event_id: eventId,
         }),
       });
   
       if (!response.ok) {
         throw new Error('Failed to book gig');
       }
-  
-      // Handle successful booking here, such as updating the UI or notifying the user
-      alert('Booking successful!');
-      setBookingModalVisible(false);
-      fetchUpcomingGigs();
 
+    let message = 'Booking successful!';
+    if (addToCalendar) {
+      message += ' The event has been added to your calendar.';
+    }
+
+    snackbarManager.showMessage(message);
+
+      setBookingModalVisible(false);
+      fetchUpcomingGigs(); 
     } catch (error) {
-      // Handle errors, such as showing an alert to the user
-      alert('Error booking gig. Please try again.');
+      console.log('Error booking gig:', error);
+      snackbarManager.showMessage('Error booking gig. Please try again.');
+    } finally {
+      setIsBookingInProgress(false); // Ensure this is reset regardless of booking outcome
     }
   };
   
@@ -242,6 +336,13 @@ const ProfileDetailsScreen = ({ route }) => {
         <Modal animationType="slide" transparent={true} visible={isBookingModalVisible}>
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
+          <View style={styles.checkboxContainer}>
+              <Checkbox.Android
+                status={addToCalendar ? 'checked' : 'unchecked'}
+                onPress={() => setAddToCalendar(!addToCalendar)}
+              />
+              <Text style={styles.checkboxLabel}>Add to calendar</Text>
+            </View>
             <Text style={styles.modalHeader}>Confirm your booking</Text>
             <Text style={styles.modalText}>Choose how many places you book </Text>
 
@@ -254,9 +355,9 @@ const ProfileDetailsScreen = ({ route }) => {
   ))}
 </Picker>
 
-            <TouchableOpacity onPress={() => handleConfirmBooking(selectedGigInstanceId)} style={styles.confirmButton}>
-              <Text style={styles.confirmButtonText}>Confirm <Icon name="check" size={20} color="white" /></Text>
-            </TouchableOpacity>
+<TouchableOpacity onPress={confirmBookingAndAddToCalendar} style={styles.confirmButton}>
+  <Text style={styles.confirmButtonText}>Confirm <Icon name="check" size={20} color="white" /></Text>
+</TouchableOpacity>
             <TouchableOpacity onPress={() => setBookingModalVisible(false)} style={styles.cancelButton}>
               <Text style={styles.cancelButtonText}>Cancel <Icon name="close" size={20} color="white" /></Text>
             </TouchableOpacity>
@@ -280,6 +381,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingTop: 20,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20, // Adjust as needed for spacing
+  },
+  checkboxLabel: {
+    marginLeft: 8, // Adjust as needed for spacing between the checkbox and its label
+    fontSize: 16, // Adjust as needed for label font size
   },
   headerRight: {
     marginTop: 10,

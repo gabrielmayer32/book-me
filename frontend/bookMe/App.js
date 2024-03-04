@@ -9,17 +9,17 @@ import { Alert } from 'react-native';
 import { Snackbar } from 'react-native-paper';
 import NotificationHandler from './utils/NotificationHandler';
 import { Linking } from 'react-native';
-
+import snackbarManager from './utils/snackbarManager';
 import { UserContext } from './src/UserContext'; // Adjust the path as necessary
 
 const App = () => {
   const [visible, setVisible] = useState(false);
-  const [snackMessage, setSnackMessage] = useState('');
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   useEffect(() => {
     const subscription = Notifications.addNotificationReceivedListener(notification => {
       const { title, body } = notification.request.content;
-      setSnackMessage(`${title}: ${body}`);
+      setSnackbarMessage(`${title}: ${body}`);
       setVisible(true); // Show the snackbar
     });
 
@@ -68,8 +68,17 @@ const App = () => {
     registerForPushNotificationsAsync();
   }, []);
 
-  const onDismissSnackBar = () => setVisible(false);
+  useEffect(() => {
+    snackbarManager.setSnackbar((message) => {
+      setSnackbarMessage(message);
+      setVisible(true);
+    });
+  }, []);
 
+
+
+  const onDismissSnackBar = () => setVisible(false);
+  
   return (
     <PaperProvider theme={Theme}>
       <UserProvider>
@@ -79,7 +88,7 @@ const App = () => {
           visible={visible}
           onDismiss={onDismissSnackBar}
           duration={3000}>
-          {snackMessage}
+        {snackbarMessage}
         </Snackbar>
       </UserProvider>
     </PaperProvider>

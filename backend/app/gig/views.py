@@ -69,12 +69,13 @@ class BookGigView(APIView):
         gig_instance = GigInstance.objects.get(id=gig_instance_id)
         if gig_instance.is_fully_booked:
             return Response({'error': 'This gig is fully booked.'}, status=400)
-
+        print(request.data)
         with transaction.atomic():
             booking = Booking.objects.create(
                 user=request.user,
                 gig_instance=gig_instance,
                 number_of_slots=number_of_slots,
+                event_id = request.data.get('event_id'),
                 status=Booking.StatusChoices.PENDING 
             )
 
@@ -400,15 +401,22 @@ class DeclineBookingView(APIView):
             description=f'Your booking for "{booking.gig_instance.gig.title}" has been declined.',
             action_object_url=f'/gig/{booking.gig_instance.id}/'  # Adjust URL as necessary for your frontend
         )
+        print(booking.event_id)
 
-        # Sending push notification
+        # Sending push notification with eventId
         provider_tokens = ExpoPushToken.objects.filter(user=booking.user)
         for token in provider_tokens:
             send_push_notification(
                 token.token,
                 'Booking Declined',
-                f'{request.user.username} has declined your booking for "{booking.gig_instance.gig.title}".', {"targetScreen": "GigDetail"}
+                f'{request.user.username} has declined your booking for "{booking.gig_instance.gig.title}".',
+                {
+                    "targetScreen": "GigDetail",
+                    "action": "deleteCalendarEvent",
+                    "eventId": booking.event_id  
+                }
             )
+
         return Response({"message": "Booking declined."}, status=status.HTTP_200_OK)
 
 
