@@ -26,12 +26,19 @@ function AppTabs() {
           else if (route.name === 'Notification') iconName = focused ? 'bell' : 'bell-outline';
           return <Icon name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#4F8EF7',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: 'white',
+        tabBarInactiveTintColor: 'white',
+        tabBarStyle: { backgroundColor: '#4F8EF7' }, // Add this line to set the background color
+
       })}
     >
 <Tab.Screen 
         name="Home" 
+        options={{
+          title: 'Home',
+          headerStyle: { backgroundColor: '#4F8EF7' },
+          headerTintColor: 'white',
+        }}
         component={HomeStackScreen} 
         listeners={({ navigation, route }) => ({
           tabPress: e => {
@@ -43,11 +50,22 @@ function AppTabs() {
         })}
         
       />
-      <Tab.Screen name="Bookings" component={BookingsScreen} />
+      <Tab.Screen name="Bookings" 
+      options={{
+        title: 'Bookings',
+        headerStyle: { backgroundColor: '#4F8EF7' },
+        headerTintColor: 'white',
+      }}
+      component={BookingsScreen} />
       <Tab.Screen
+    
           name="Notifications"
           component={NotificationScreen}
           options={{
+            title: 'Notifications',
+            headerStyle: { backgroundColor: '#4F8EF7' },
+            headerTintColor: 'white',
+
             tabBarIcon: ({ focused, color, size }) => (
               <View>
                 <Icon name={focused ? 'bell' : 'bell-outline'} size={size} color={color} />
@@ -63,4 +81,7 @@ function AppTabs() {
   );
 }
 
+
+
 export default AppTabs;
+

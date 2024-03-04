@@ -14,13 +14,27 @@ import AppTabs from '../components/HomeTabs';
 import RecurringGigInstancesScreen from '../screens/RecurringGigInstances';
 import ActivityCollaborators from '../screens/ActivityCollaboratorsScreen';
 import ProviderNotificationScreen from '../screens/ProviderNotificationScreen';
+import { LinkingOptions } from '@react-navigation/native';
+import TemplateGigListScreen from '../screens/TemplateGigListScreen';
 
 const Stack = createStackNavigator();
 
+const linking = {
+  // prefixes: ['BookMe://', 'https://yourapp.com'], // Adjust these URLs to match your app's URL schemes
+  prefixes: ['BookMe://'], // Adjust these URLs to match your app's URL schemes
+
+  config: {
+    screens: {
+      GigDetail: 'gig/:id', 
+      Home: 'home',
+      // Define other paths and screens as needed
+    },
+  },
+};
 
 function AppNavigator() {
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="HomeTabs" component={AppTabs} />
@@ -31,8 +45,9 @@ function AppNavigator() {
         <Stack.Screen name="ProviderGigs" component={ProviderGigScreen} />
         <Stack.Screen name="Calendar" component={CalendarScreen} />
         <Stack.Screen name="ActivityCollaborators" component={ActivityCollaborators} />
+        <Stack.Screen name="TemplatesScreen" component={TemplateGigListScreen} />
       </Stack.Navigator>
-    </NavigationContainer>
+      </NavigationContainer>
   );
 }
 

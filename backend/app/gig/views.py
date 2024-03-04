@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from accounts.models import CustomUser, ExpoPushToken, Notification
+from accounts.models import CustomUser, ExpoPushToken, Notification, Subscription
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -30,21 +30,6 @@ from .models import GigInstance
 from django.conf import settings
 from datetime import datetime, timedelta
 from django.utils import timezone
-
-class CancelBookingView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, booking_id):
-        booking = get_object_or_404(Booking, id=booking_id)
-
-        # Ensure that users can only cancel their own bookings or providers can cancel any bookings for their gigs
-        if booking.user != request.user and booking.gig_instance.gig.provider != request.user:
-            return Response({'error': 'You do not have permission to cancel this booking.'}, status=403)
-
-        # Here you could also update the booking status to "Cancelled" instead of deleting
-        booking.delete()
-
-        return Response({'message': 'Booking cancelled successfully.'})
 
 
 class UserBookingsView(APIView):
@@ -108,7 +93,7 @@ class BookGigView(APIView):
                 send_push_notification(
                     token.token,
                     'New Booking',
-                    f'Your gig "{gig_instance.gig.title}" has been booked.'
+                    f'Your gig "{gig_instance.gig.title}" has been booked.', {"targetScreen": "GigDetail", "id": str(gig_instance.gig.id)}
                 )
 
         return Response({'message': 'Booking successful.', 'booking_id': booking.id})
@@ -264,18 +249,54 @@ class UpcomingGigsView(APIView):
 
         return Response(gigs_data)
 
+from rest_framework.decorators import api_view
+
+@api_view(['GET'])
+def gig_templates(request):
+    if request.method == 'GET':
+        templates = Gig.objects.filter(is_template=True, provider=request.user)
+        serializer = GigSerializer(templates, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
 
 class CreateGigView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         serializer = GigSerializer(data=request.data, context={'request': request})
-        print(request.data)
         if serializer.is_valid():
-            serializer.save(provider=request.user)  
+            gig = serializer.save(provider=request.user)
+            
+            # Fetch all subscribers of the provider
+            subscribers = Subscription.objects.filter(provider=request.user)
+            for subscription in subscribers:
+                subscriber = subscription.subscriber
+                
+                # Fetch all expo push tokens for the subscriber
+                expo_push_tokens = ExpoPushToken.objects.filter(user=subscriber)
+                
+                title = "New Gig Available!"
+                message = f"{request.user.business_name} has created a new gig: {gig.title}"
+                
+                # Send push notification to all tokens
+                for token in expo_push_tokens:
+                    send_push_notification(token.token, title, message,{"targetScreen": "GigDetail", "id": str(gig.id)})
+                
+                # Create a notification record
+                Notification.objects.create(
+                    recipient=subscriber,
+                    actor=request.user.business_name,
+                    verb='created a new gig',
+                    description=message,
+                    provider=request.user,
+                    unread=True,
+                    action_object_url=f'/ProfileDetails/'  # Example action URL, adjust as needed
+
+                    
+                )
+            
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            print(serializer.errors)  # Log or print for debugging
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -357,7 +378,7 @@ class AcceptBookingView(APIView):
                 send_push_notification(
                     token.token,
                     'Booking Accepted',
-                    f'{request.user.username} has accepted your booking for "{booking.gig_instance.gig.title}".'
+                    f'{request.user.username} has accepted your booking for "{booking.gig_instance.gig.title}".', {"targetScreen": "GigDetail"}
                 )
 
         return Response({"message": "Booking accepted."}, status=status.HTTP_200_OK)
@@ -386,9 +407,38 @@ class DeclineBookingView(APIView):
             send_push_notification(
                 token.token,
                 'Booking Declined',
-                f'{request.user.username} has declined your booking for "{booking.gig_instance.gig.title}".'
+                f'{request.user.username} has declined your booking for "{booking.gig_instance.gig.title}".', {"targetScreen": "GigDetail"}
             )
         return Response({"message": "Booking declined."}, status=status.HTTP_200_OK)
+
+
+from django.http import JsonResponse, Http404
+from django.views import View
+from .models import Booking
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CancelBookingView(View):
+    def post(self, request, booking_id):
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'You must be logged in to cancel a booking'}, status=401)
+
+        try:
+            print('ok')
+            booking = Booking.objects.get(gig_instance__id=booking_id)
+            print(booking)
+        except Booking.DoesNotExist:
+            return JsonResponse({'error': 'Booking not found or does not belong to the user'}, status=404)
+
+        # Update the booking status to CANCELED
+        booking.status = Booking.StatusChoices.CANCELED
+        booking.save()
+
+        return JsonResponse({'message': 'Booking canceled successfully.'})
+
+
     
 
 class GigDetailView(APIView):

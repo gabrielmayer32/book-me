@@ -19,20 +19,14 @@ const ProviderDashboardScreen = ({ route, navigation }) => {
     const [bookingRequests, setBookingRequests] = useState([]);
     console.log(`Notification count in MainScreen: ${notificationCount}`);
 
-    useEffect(() => {
-      console.log(userInfo)
-      fetchUpcomingGigs(userInfo.id);
-      fetchBookingRequests();
-  }, []);
+  //   useEffect(() => {
+  //     console.log(userInfo)
+  //     fetchUpcomingGigs(userInfo.id);
+  //     fetchBookingRequests();
+  // }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-        if (userInfo && userInfo.id) {
-            fetchUpcomingGigs(userInfo.id);
-            fetchBookingRequests();
-        }
-    }, [userInfo])
-);
+  
+
 
   const fetchUpcomingGigs = async (providerId) => {
     try {
@@ -78,7 +72,7 @@ const fetchBookingRequests = async () => {
   }
 };
 
-  
+
   const socialIcons = {
     facebook: 'facebook',
     instagram: 'instagram',
@@ -97,7 +91,15 @@ const fetchBookingRequests = async () => {
     return socialIcons[platform] || 'account-circle-outline';
 };
 
-
+useFocusEffect(
+  useCallback(() => {
+      if (userInfo && userInfo.id) {
+          console.log('Fetching gigs and booking requests on focus');
+          fetchUpcomingGigs(userInfo.id);
+          fetchBookingRequests();
+      }
+  }, [userInfo])
+);
   return (
     <>
     <CustomAppBar 
@@ -143,7 +145,13 @@ const fetchBookingRequests = async () => {
         <FlatList
           data={upcomingGigs}
           keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => <GigItem gig={item} />}
+          renderItem={({ item }) => // In ProviderDashboardScreen
+          <GigItem
+            gig={item}
+            fetchUpcomingGigs={() => fetchUpcomingGigs(userInfo.id)}
+            fetchBookingRequests={fetchBookingRequests}
+          />
+          }
           scrollEnabled={false} // Disable scrolling of the FlatList
 
         />

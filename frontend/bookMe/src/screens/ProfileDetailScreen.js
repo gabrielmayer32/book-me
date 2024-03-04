@@ -16,6 +16,36 @@ const ProfileDetailsScreen = ({ route }) => {
   const [selectedSlots, setSelectedSlots] = useState(1);
   const [maxSlots, setMaxSlots] = useState(5); // Example max slots, this should come from gig data
   const [selectedGigInstanceId, setSelectedGigInstanceId] = useState(null);
+  const [isSubscribed, setIsSubscribed] = useState(route.params.is_subscribed);
+
+  console.log('HERE');
+  console.log(route.params)
+  const handleToggleSubscription = async () => {
+    const providerId = route.params.providerId;
+    const csrfToken = await AsyncStorage.getItem('csrfToken');
+
+
+    try {
+        const token = await AsyncStorage.getItem('token'); // Assuming you store your token after login
+        const response = await fetch(`${BACKEND_URL}/accounts/subscribe/${providerId}/`, {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': csrfToken,
+              'Content-Type': 'application/json',
+            },
+        });
+        const result = await response.json();
+        if (response.ok) {
+            setIsSubscribed(result.status === 'subscribed');
+        } else {
+            console.error(result.error);
+        }
+    } catch (error) {
+        console.error('Error toggling subscription:', error);
+    }
+};
+
+
 
   const handleBookPress = (gigInstanceId) => {
     const selectedGig = upcomingGigs.find(gig => gig.id === gigInstanceId);
@@ -142,6 +172,7 @@ const ProfileDetailsScreen = ({ route }) => {
                   remainingSlots={gig.remaining_slots}
                   address={gig.address}
                   endTime={gig.end_time}
+                  description={gig.description}
                   onBookPress={() => handleBookPress(gig.id)} // Pass gig instance ID to handleBookPress
                   />
               );
@@ -159,8 +190,10 @@ const ProfileDetailsScreen = ({ route }) => {
   return (
     <ScreenLayout title="Profile Details" showBackButton={true}>
                  <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-
+                 
       <View style={styles.container}>
+      
+
         {/* <Card style={styles.card}> */}
           {/* <Card.Content> */}
           <Image source={{ uri: profileImageUrl }} style={styles.profileImage} />
@@ -182,6 +215,18 @@ const ProfileDetailsScreen = ({ route }) => {
                 </TouchableOpacity>
               ))}
             </View>
+            <View style={styles.headerRight}>
+    <TouchableOpacity onPress={handleToggleSubscription} style={ styles.subscriptionButton}>
+        <Icon
+            name={isSubscribed ? "bell-off" : "bell"}
+            size={18}
+            color="black"
+        />
+        <Text style={styles.subscriptionText}>
+            {isSubscribed ? "Turn off subscription" : "Turn on subscription"}
+        </Text>
+    </TouchableOpacity>
+</View>  
           {/* </Card.Content> */}
           {/* <Card.Actions style={styles.actions}> */}
             {/* <Button icon="calendar-check" mode="contained" onPress={() => console.log('Book Me action')} style={styles.bookButton}>
@@ -236,6 +281,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 20,
   },
+  headerRight: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center', // Ensure vertical alignment in the middle
+    justifyContent: 'flex-end',
+    marginRight: 20,
+    borderWidth: 0.5, // Add a border
+    borderColor: 'black', // Set the border color
+    borderRadius: 5, // Optional: round the corners of the border
+},
+
+subscriptionButton: {
+    flexDirection: 'row', // Align icon and text horizontally
+    alignItems: 'center', // Align icon and text vertically in the middle
+    justifyContent: 'center', // Center the contents
+    paddingVertical: 5, // Add some padding on top and bottom
+    paddingHorizontal: 10, // Add some padding on left and right
+},
+subscriptionText: {
+  fontSize: 12,
+  textAlign: 'center', // Ensure text is centered, especially useful for multiple lines
+  color: 'black',
+},
+
+notSubscribed: {
+    backgroundColor: 'transparent', // Example for a non-subscribed state
+},
   centeredView: {
     flex: 1,
     justifyContent: "center",

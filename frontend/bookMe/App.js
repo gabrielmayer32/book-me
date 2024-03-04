@@ -9,6 +9,7 @@ import { Alert } from 'react-native';
 import { Snackbar } from 'react-native-paper';
 import NotificationHandler from './utils/NotificationHandler';
 import { Linking } from 'react-native';
+
 import { UserContext } from './src/UserContext'; // Adjust the path as necessary
 
 const App = () => {

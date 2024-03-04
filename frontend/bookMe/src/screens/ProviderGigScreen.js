@@ -9,11 +9,26 @@ import moment from 'moment'; // Import moment
 import { adjustDateTimeToUTC4, adjustTimeToUTC4 } from '../../utils/utcTime';
 import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEffect
 import {BACKEND_URL} from '../../utils/constants/';
-
+import axios from 'axios';
 
 const ProviderGigsScreen = ({ navigation }) => {
   const [gigs, setGigs] = useState([]);
   const { userInfo } = useUser();
+  const [templates, setTemplates] = useState([]);
+
+  const fetchTemplates = async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/gig/templates/`);
+      console.log(response.data);
+      setTemplates(response.data); // Directly use setTemplates here
+    } catch (error) {
+      console.error('Failed to fetch templates:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchTemplates();
+  }, []); // Correctly call fetchTemplates without arguments
 
 
   const loadGigs = async () => {
@@ -159,7 +174,10 @@ const ProviderGigsScreen = ({ navigation }) => {
     />
   );
   
-
+  const navigateToCreateGigFromTemplate = () => {
+    navigation.navigate('TemplateGigList'); // Adjust 'TemplateGigList' to your route name
+  };
+  
   const handleEditGig = (gigId) => {
     // Navigate to the Edit Gig screen, passing the selected gig's ID
     navigation.navigate('EditGig', { gigId });
@@ -176,7 +194,14 @@ return (
   userInfo={userInfo} 
   currentScreen="ProviderGigs" // Adjust this value based on the current screen
 /> 
+
+
       <ScreenLayout>
+      <TouchableOpacity style={styles.createButton} onPress={() => navigation.navigate('TemplatesScreen', { templates, onSelect: navigateToCreateGigFromTemplate })}>
+  <Icon name="file-document" size={20} color="white" />
+  <Text style={styles.createButtonText}>Create Gig from Template</Text>
+</TouchableOpacity>
+
         <FlatList
           data={gigs}
           keyExtractor={(item) => item.id.toString()}
@@ -185,6 +210,8 @@ return (
               <Icon name="plus" size={20} color="white" />
               <Text style={styles.createButtonText}>Create Gig</Text>
             </TouchableOpacity>
+            
+            
           )}
           renderItem={renderGigItem}
         />

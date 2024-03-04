@@ -26,12 +26,14 @@ const getStatusColor = ({ status }) => {
   
 
   const BookingItem = ({ item, handleNavigateToLocation, handleCancelBooking }) => {
+
     const [menuVisible, setMenuVisible] = useState(false);
+    const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
     const openMenu = () => setMenuVisible(true);
     const closeMenu = () => setMenuVisible(false);
     const statusColor = getStatusColor(item.status); // Define getStatusColor accordingly
-    
+    const moreIconRef = React.useRef(null);
     const toggleMenuVisibility = () => {
         setMenuVisible(!menuVisible);
     };
@@ -43,19 +45,28 @@ const getStatusColor = ({ status }) => {
           <Text style={styles.bookingTitle}>{item.gig_title} with {item.provider_name}</Text>
           <Text style={styles.address}>{item.address}</Text>
         </View>        
-        <TouchableOpacity style={styles.moreIcon} onPress={toggleMenuVisibility}>
-          <Icon name="dots-vertical" size={24} color="#000" />
-        </TouchableOpacity>
+        <TouchableOpacity
+    ref={moreIconRef}
+    style={styles.moreIcon}
+    onPress={() => {
+        moreIconRef.current.measure((fx, fy, width, height, px, py) => {
+            setMenuVisible(true);
+            setMenuPosition({ x: px + width / 2, y: py + height / 2 }); // Center the menu based on the icon position
+        });
+    }}>
+    <Icon name="dots-vertical" size={24} color="#000" />
+</TouchableOpacity>
       </View>
            
             
-            <Menu
-                visible={menuVisible}
-                onDismiss={toggleMenuVisibility}
-                anchor={{ x: 200, y: 100 }}> 
-                <Menu.Item onPress={() => { handleNavigateToLocation(item.latitude, item.longitude); toggleMenuVisibility(); }} title="Get me there" />
-                <Menu.Item onPress={() => { handleCancelBooking(item.id); toggleMenuVisibility(); }} title="Cancel Booking" />
-            </Menu>
+                <Menu
+              visible={menuVisible}
+              onDismiss={toggleMenuVisibility}
+              anchor={menuPosition}>
+              <Menu.Item onPress={() => { handleNavigateToLocation(item.latitude, item.longitude); toggleMenuVisibility(); }} title="Get me there" />
+              <Menu.Item onPress={() => { handleCancelBooking(item.id); toggleMenuVisibility(); }} title="Cancel Booking" />
+          </Menu>
+
             <View style={styles.details}>
 
             <View style={styles.detailRow}>

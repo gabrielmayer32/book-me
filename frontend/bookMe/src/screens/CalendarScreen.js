@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import axios from "axios"; // Assuming you're using axios for HTTP requests
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import MapView, { Marker } from "react-native-maps"; // Ensure MapView and Marker are imported
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Checkbox } from 'react-native-paper';
 import {BACKEND_URL} from '../../utils/constants/';
 
 const daysOfWeek = [
@@ -29,15 +30,15 @@ const daysOfWeek = [
   "Saturday",
 ];
 
-const CalendarScreen = ({ navigation, userInfo }) => {
+const CalendarScreen = ({ navigation, userInfo,route  }) => {
 
+  const templateData = route.params?.templateData;
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [maxPeople, setMaxPeople] = useState("");
   const [date, setDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDays, setSelectedDays] = useState(
     new Array(daysOfWeek.length).fill(false),
   );
@@ -50,10 +51,19 @@ const CalendarScreen = ({ navigation, userInfo }) => {
   const locationData = location
     ? { latitude: location.latitude, longitude: location.longitude }
     : {};
+    const [isTemplate, setIsTemplate] = useState(false); // New state for the checkbox
 
-  const formatTime = (date) => {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
+
+    useEffect(() => {
+      if (templateData) {
+        // Pre-fill form fields with templateData
+        setTitle(templateData.title);
+        setDescription(templateData.description);
+        // Continue for other fields
+      }
+    }, [templateData]);
+  
+
 
   const renderMapView = () => {
     return (
@@ -88,7 +98,6 @@ const CalendarScreen = ({ navigation, userInfo }) => {
     return new Date(time.setHours(adjustedHours, adjustedMinutes));
   };
   
-  // In your DateTimePicker onChange handler for start time
   const handleStartTimeChange = (event, selectedTime) => {
     if (selectedTime) {
       const adjustedTime = adjustTimeToNearestQuarterHour(selectedTime);
@@ -119,6 +128,7 @@ const CalendarScreen = ({ navigation, userInfo }) => {
       selected ? dayNameToId[daysOfWeek[index]] : null,
     )
     .filter((id) => id !== null);
+    
   const createGig = async () => {
     try {
       const formattedDate = date.toISOString().split("T")[0];
@@ -143,8 +153,8 @@ const CalendarScreen = ({ navigation, userInfo }) => {
           end_time: formattedEndTime,
           is_recurring: isRecurring,
           recurring_days: selectedDayIds,
-          ...locationData, // Include the location data in your request
-          // Handle recurring_days and other fields as needed
+          is_template: isTemplate, 
+          ...locationData, 
         },
         {
           headers: {
@@ -264,13 +274,47 @@ const CalendarScreen = ({ navigation, userInfo }) => {
     
     <ScreenLayout title="Create a Gig" showBackButton={true}>
       <ScrollView contentContainerStyle={styles.container}>
-        <TextInput placeholder="Title" value={title} onChangeText={setTitle} style={styles.input} />
-        <TextInput placeholder="Description" value={description} onChangeText={setDescription} style={[styles.input, styles.multilineInput]} multiline />
-        <TextInput placeholder="Price" value={price} onChangeText={setPrice} keyboardType="numeric" style={styles.input} />
-        <TextInput placeholder="Max People" value={maxPeople} onChangeText={setMaxPeople} keyboardType="numeric" style={styles.input} />
+        
+      <Text style={styles.inputLabel}>Title</Text>
+    <TextInput 
+      placeholder="Enter gig title" 
+      value={title} 
+      onChangeText={setTitle} 
+      style={styles.input} 
+    />
+
+    {/* Description Input */}
+    <Text style={styles.inputLabel}>Describe your gig </Text>
+    <TextInput 
+      placeholder="Enter gig description" 
+      value={description} 
+      onChangeText={setDescription} 
+      style={[styles.input, styles.multilineInput]} 
+      multiline 
+    />
+
+    {/* Price Input */}
+    <Text style={styles.inputLabel}>Price per person - in Rs.</Text>
+    <TextInput 
+      placeholder="Enter price" 
+      value={price} 
+      onChangeText={setPrice} 
+      keyboardType="numeric" 
+      style={styles.input} 
+    />
+
+    {/* Max People Input */}
+    <Text style={styles.inputLabel}>Max number of people</Text>
+    <TextInput 
+      placeholder="Enter max people" 
+      value={maxPeople} 
+      onChangeText={setMaxPeople} 
+      keyboardType="numeric" 
+      style={styles.input} 
+    />
 
         <View style={styles.toggleContainer}>
-          <Text style={styles.label}>Is this gig recurring?</Text>
+          <Text style={styles.inputLabel}>Is this gig recurring?</Text>
           <TouchableOpacity style={[styles.toggleButton, isRecurring ? styles.toggleButtonActive : {}]} onPress={() => setIsRecurring(!isRecurring)}>
             <Text style={styles.toggleButtonText}>{isRecurring ? "Yes" : "No"}</Text>
           </TouchableOpacity>
@@ -288,6 +332,9 @@ const CalendarScreen = ({ navigation, userInfo }) => {
 
         {!isRecurring && (
           <View style={styles.datePickerContainer}>
+          <Text style={styles.dateLabel}>Date</Text>
+          
+
             <DateTimePicker
               value={date}
               mode="date"
@@ -319,7 +366,18 @@ const CalendarScreen = ({ navigation, userInfo }) => {
     style={styles.dateTimePicker}
   />
         </View>
-
+        {!templateData?.is_template && (
+        <View style={styles.checkboxContainer}>
+        
+        <Text style={styles.templateText}>Save as template ? </Text>
+        <Checkbox.Android
+            status={isTemplate ? 'checked' : 'unchecked'}
+            onPress={() => setIsTemplate(!isTemplate)}
+            color={isTemplate ? '#6200ee' : undefined} // Change to your preferred color
+            uncheckedColor="black" // Optional: color when unchecked
+          />
+          </View>
+        )}
         <TouchableOpacity style={styles.buttonPin} onPress={() => setIsMapVisible(true)}>
         <Icon name="pin" size={20} color="#fff" />
 
@@ -341,6 +399,51 @@ const styles = StyleSheet.create({
       padding: 20,
     },
     input: {
+      height: 40,
+      marginBottom: 10,
+      borderWidth: 1,
+      padding: 10,
+    },
+    checkboxContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+
+    datePickerContainer: {
+      marginLeft: 10,
+      flexDirection: 'row', // Align items in a row
+      alignItems: 'center', // Vertically center items
+      marginBottom: 15,
+      marginTop: 10,
+      justifyContent: 'space-between', // Adjust based on your design preference
+    },
+
+    dateLabel: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      color: '#000', // Adjust color based on your theme
+      marginRight: 10, // Adds some space between the label and the button
+    },
+    datePickerButton: {
+      flexDirection: 'row', // Align button text and icon in a row
+      alignItems: 'center',
+      backgroundColor: '#E8E8E8', // A light background color for the button
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 5,
+    },
+    datePickerText: {
+      marginRight: 5, // Space between the date text and the icon
+      color: '#4F8EF7', // Button text color
+    },
+    inputLabel: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      color: '#000', // Adjust color based on your theme
+      marginBottom: 4, // Space between label and input field
+      marginLeft: 10, // Align with the input text
+    },
+    input: {
       marginBottom: 15,
       borderWidth: 1,
       borderColor: '#ccc',
@@ -351,10 +454,18 @@ const styles = StyleSheet.create({
       minHeight: 100,
       textAlignVertical: 'top',
     },
+    templateText : {
+      fontSize: 14,
+      fontWeight: 'bold',
+      marginTop: 10,
+      marginLeft: 15,
+      marginBottom: 10,
+  },
     timeLabel : {
         fontSize: 14,
+        fontWeight: 'bold',
         marginTop: 10,
-        marginLeft: 10,
+        marginLeft: 15,
     },
     button: {
         flexDirection: 'row',
@@ -429,9 +540,7 @@ const styles = StyleSheet.create({
     dayButtonText: {
       color: '#000',
     },
-    datePickerContainer: {
-      marginBottom: 15,
-    },
+
     timePickerContainer: {
       flexDirection: 'row',
       justifyContent: 'space-between',

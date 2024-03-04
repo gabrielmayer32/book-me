@@ -62,7 +62,7 @@ const HomeScreen = () => {
             });
           }}>
           <View style={styles.activityContainer}>
-            <Image source={{ uri: baseURL + item.image }} style={styles.activityImage} />
+            <Image source={{ uri: baseURL + item.image, cache: 'force-cache'  }} style={styles.activityImage} />
             <Text style={styles.activityName}>{item.name}</Text>
           </View>
         </TouchableOpacity>
@@ -146,7 +146,8 @@ const HomeScreen = () => {
       activity: item.activity, 
       phoneNumber: item.phone_number, 
       profileImageUrl: item.profile_picture, 
-      socials: item.socials, 
+      socials: item.socials,
+      is_subscribed: item.is_subscribed,
     });
   };
 
@@ -194,7 +195,7 @@ const HomeScreen = () => {
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => handlePress(item)}>
             <View style={styles.avatarContainer}>
-              <Image source={{ uri: item.profile_picture }} style={styles.avatar} /> 
+              <Image source={{ uri: item.profile_picture , cache: 'force-cache' }} resizeMode='cover' style={styles.avatar} /> 
               <Text style={styles.name}>{item.businessName}</Text>
               <Text style={styles.activity}>{item.activity}</Text>
 

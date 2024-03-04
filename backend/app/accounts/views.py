@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.core.serializers import serialize
 from django.conf import settings
 import os
-from .models import CustomUser, SocialMedia
+from .models import Subscription, CustomUser
 
 from django.http import JsonResponse
 from django.core import serializers
@@ -29,7 +29,27 @@ from django.db.models import F
 from django.db.models import Value, CharField
 from django.db.models.functions import Concat
 from django.views import View
+from django.views.decorators.http import require_POST
 
+@csrf_exempt
+@require_POST
+def toggle_subscription(request, provider_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+
+    try:
+        provider = CustomUser.objects.get(pk=provider_id, is_provider=True)
+        subscription, created = Subscription.objects.get_or_create(subscriber=request.user, provider=provider)
+
+        if not created:
+            subscription.delete()
+            return JsonResponse({'status': 'unsubscribed'})
+
+        return JsonResponse({'status': 'subscribed'})
+
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'error': 'Provider not found'}, status=404)
+    
 class MarkNotificationsAsReadView(View):
     def put(self, request, *args, **kwargs):
         # Mark all notifications as read for the logged-in user
@@ -176,10 +196,14 @@ def login_view(request):
         return JsonResponse({"success": False, "message": "Only POST requests are allowed."}, status=405)
 
 def service_providers_list(request):
+    current_user = request.user
     providers = CustomUser.objects.filter(is_provider=True).prefetch_related('social_media')
     providers_list = []
 
     for provider in providers:
+        # Check if the current user is subscribed to the provider
+        is_subscribed = Subscription.objects.filter(subscriber=current_user, provider=provider).exists()
+
         # Serialize provider to a Python dict
         provider_dict = {
             "id": provider.id,
@@ -188,20 +212,18 @@ def service_providers_list(request):
             "bio": provider.bio,
             "phone_number": provider.phone_number,
             "businessName": provider.business_name,
-            # Assuming 'activity' is a related object with a 'name' attribute
             "activity": provider.activity.name if provider.activity else None,
             "profile_picture": request.build_absolute_uri(provider.profile_picture.url) if provider.profile_picture else None,
+            "is_subscribed": is_subscribed,  # Add subscription status
             "socials": [
                 {
                     "platform": social.platform.name,
                     "username": social.username,
-                    # Construct the full URL for the social media link
                     "url": f"{social.platform.base_url}/{social.username}",
-                    "icon": social.platform.icon_name  # Ensure your SocialPlatform model includes an 'icon_name' field
+                    "icon": social.platform.icon_name
                 } for social in provider.social_media.all()
             ]
         }
         providers_list.append(provider_dict)
 
     return JsonResponse({'providers': providers_list})
-

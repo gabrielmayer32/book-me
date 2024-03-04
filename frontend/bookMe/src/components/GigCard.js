@@ -1,37 +1,48 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-const GigCard = ({ dayOfMonth, title, startTime, endTime, remainingSlots, address, onBookPress }) => {
-    
-    return (
-      <View style={styles.gigCardContainer}>
-        <View style={styles.dateSquare}>
-          <Text style={styles.dateText}>{dayOfMonth}</Text>
-        </View>
-        
-        <View style={styles.gigDetails}>
-          <Text style={styles.gigItemTitle}>{title}</Text>
-          <View style={styles.detailRow}>
-            <Icon name="map" size={20} color="#4F8EF7" />
-            <Text style={styles.detailText}>{address}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Icon name="clock-start" size={20} color="#4F8EF7" />
-            <Text style={styles.detailText}>{startTime} - {endTime}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Icon name="account-group" size={20} color="#4F8EF7" />
-            <Text style={styles.detailText}>{remainingSlots} slots remaining</Text>
-          </View>
-        </View>
-        
-        <TouchableOpacity style={styles.bookButton} onPress={onBookPress}>
-          <Text style={styles.bookButtonText}>Book Now</Text>
-        </TouchableOpacity>
-      </View>
-    );
+const GigCard = ({ dayOfMonth, title, startTime, endTime, remainingSlots, address, onBookPress, description }) => {
+  // State to manage whether the description is expanded or not
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+
+  // Toggle function to expand/collapse the description
+  const toggleDescription = () => {
+      setIsDescriptionExpanded(!isDescriptionExpanded);
   };
+
+  return (
+      <View style={styles.gigCardContainer}>
+          <View style={styles.dateSquare}>
+              <Text style={styles.dateText}>{dayOfMonth}</Text>
+          </View>
+
+          <View style={styles.gigDetails}>
+              <Text style={styles.gigItemTitle}>{title}</Text>
+              <TouchableOpacity style={styles.descriptionRow} onPress={toggleDescription}>
+                  <Icon name="information" size={20} color="#4F8EF7" />
+                  <Text style={styles.itemDescription} numberOfLines={isDescriptionExpanded ? 0 : 2}>{description}</Text>
+              </TouchableOpacity>
+              <View style={styles.detailRow}>
+                  <Icon name="map" size={20} color="#4F8EF7" />
+                  <Text style={styles.detailText}>{address}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                  <Icon name="clock-start" size={20} color="#4F8EF7" />
+                  <Text style={styles.detailText}>{startTime} - {endTime}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                  <Icon name="account-group" size={20} color="#4F8EF7" />
+                  <Text style={styles.detailText}>{remainingSlots} slots remaining</Text>
+              </View>
+          </View>
+
+          <TouchableOpacity style={styles.bookButton} onPress={onBookPress}>
+              <Text style={styles.bookButtonText}>Book Now</Text>
+          </TouchableOpacity>
+      </View>
+  );
+};
   
 
 const styles = StyleSheet.create({
@@ -62,7 +73,7 @@ const styles = StyleSheet.create({
       },
   dateSquare: {
     width: 50,
-    height: 100,
+    height: 150,
     backgroundColor: '#ddd',
     justifyContent: 'center',
     alignItems: 'center',
@@ -85,6 +96,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
+  },
+  descriptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    paddingRight: 20,
   },
   detailText: {
     marginLeft: 5,

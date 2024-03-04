@@ -85,6 +85,8 @@ const SwipeableNotificationItem = ({ item, onDelete }) => {
     onDelete(item.id);
   };
 
+  
+
   return (
     <Swipeable
     ref={swipeableRef}

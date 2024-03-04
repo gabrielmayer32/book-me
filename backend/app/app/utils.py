@@ -1,6 +1,6 @@
 import requests
 
-def send_push_notification(expo_push_token, title, message):
+def send_push_notification(expo_push_token, title, message, target):
     # Expo push notification endpoint
     url = 'https://exp.host/--/api/v2/push/send'
     
@@ -15,7 +15,7 @@ def send_push_notification(expo_push_token, title, message):
         'to': expo_push_token,
         'title': title,
         'body': message,
-        "data": { "targetScreen": "MessageScreen" }
+        "data": target
 
     }
     

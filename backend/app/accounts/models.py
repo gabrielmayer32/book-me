@@ -3,6 +3,9 @@ from django.contrib.auth.models import AbstractUser
 
 from django.conf import settings
 
+from django.db import models
+from django.contrib.auth import get_user_model
+
 
 
 class ExpoPushToken(models.Model):
@@ -70,6 +73,7 @@ class Notification(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
+    deep_link = models.CharField(max_length=255, blank=True, null=True)  # New field for deep linking
 
     class Meta:
         ordering = ['-timestamp']
@@ -85,3 +89,18 @@ class Notification(models.Model):
         self.is_active = False
         self.deleted_at = timezone.now()
         self.save(update_fields=['is_active', 'deleted_at'])
+
+
+
+User = get_user_model()
+
+class Subscription(models.Model):
+    subscriber = models.ForeignKey(User, related_name='following', on_delete=models.CASCADE)
+    provider = models.ForeignKey(User, related_name='followers', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('subscriber', 'provider')
+
+    def __str__(self):
+        return f"{self.subscriber} subscribes to {self.provider}"

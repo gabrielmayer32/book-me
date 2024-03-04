@@ -44,7 +44,8 @@ class Gig(models.Model):
     end_time = models.TimeField(null=True, blank=True)
     latitude = models.FloatField(null=True, blank=True)  
     longitude = models.FloatField(null=True, blank=True)  
-    address = models.CharField(max_length=255, null=True, blank=True)  
+    address = models.CharField(max_length=255, null=True, blank=True)
+    is_template = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         is_new = self._state.adding
@@ -144,7 +145,7 @@ class GigInstance(models.Model):
 
 
     def __str__(self):
-        return f" User : {self.gig.provider.first_name} - {self.gig.title} - {self.date} ({self.start_time} - {self.end_time})"
+        return f" [{self.id}] User : {self.gig.provider.first_name} - {self.gig.title} - {self.date} ({self.start_time} - {self.end_time})"
 from datetime import timedelta
 import logging
 logger = logging.getLogger(__name__)
@@ -154,6 +155,7 @@ class Booking(models.Model):
         PENDING = 'pending', 'Pending'
         ACCEPTED = 'accepted', 'Accepted'
         DECLINED = 'declined', 'Declined'
+        CANCELED = 'canceled', 'Canceled'
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bookings')
     gig_instance = models.ForeignKey('GigInstance', on_delete=models.CASCADE, related_name='gig_bookings')
