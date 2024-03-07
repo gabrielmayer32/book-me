@@ -6,6 +6,12 @@
     "version": "1.0.0",
     "main": "./src/index.js",
     "plugins": [
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.417222620085-rc6v0legpp1i3r7ep5e0kaje9alamdrn"
+        }
+      ],
       "@react-native-google-signin/google-signin",
       [
         "expo-calendar",
@@ -46,3 +52,4 @@
     "fallbackToCacheTimeout": 0
   }
 }
+
