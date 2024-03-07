@@ -7,7 +7,6 @@
     "main": "./src/index.js",
     "plugins": [
       "@react-native-google-signin/google-signin",
-
       [
         "expo-calendar",
         {
@@ -25,10 +24,22 @@
       "url": "https://u.expo.dev/cab1a67b-dd94-4b1f-a03a-121ab6e4007e"
     },
     "android": {
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
+      ],
+      "package": "com.bookme.io"
     },
     "ios": {
-      "googleServicesFile": "./ios/GoogleService-Info.plist"
+      "googleServicesFile": "./ios/GoogleService-Info.plist",
+      "infoPlist": {
+        "NSCalendarsUsageDescription": "The app needs to access your calendar.",
+        "NSRemindersUsageDescription": "Allow $(PRODUCT_NAME) to access your reminders",
+        "NSCalendarsFullAccessUsageDescription": "The app needs to access your calendar.",
+        "NSRemindersFullAccessUsageDescription": "Allow $(PRODUCT_NAME) to access your reminders"
+      },
+      "bundleIdentifier": "com.bookme.io"
     }
   },
   "updates": {

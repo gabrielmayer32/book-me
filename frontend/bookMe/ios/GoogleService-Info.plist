@@ -3,32 +3,12 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>105127397322-8mr6o3kar8c8db46oh4tqf9tbtmjffde.apps.googleusercontent.com</string>
+	<string>417222620085-rc6v0legpp1i3r7ep5e0kaje9alamdrn.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.105127397322-8mr6o3kar8c8db46oh4tqf9tbtmjffde</string>
-	<key>API_KEY</key>
-	<string>AIzaSyD59Qm8qxGw6JQfPgxkyC8fdV6QZvXHv4o</string>
-	<key>GCM_SENDER_ID</key>
-	<string>105127397322</string>
+	<string>com.googleusercontent.apps.417222620085-rc6v0legpp1i3r7ep5e0kaje9alamdrn</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>org.reactjs.native.example.bookMe</string>
-	<key>PROJECT_ID</key>
-	<string>bookme-416311</string>
-	<key>STORAGE_BUCKET</key>
-	<string>bookme-416311.appspot.com</string>
-	<key>IS_ADS_ENABLED</key>
-	<false></false>
-	<key>IS_ANALYTICS_ENABLED</key>
-	<false></false>
-	<key>IS_APPINVITE_ENABLED</key>
-	<true></true>
-	<key>IS_GCM_ENABLED</key>
-	<true></true>
-	<key>IS_SIGNIN_ENABLED</key>
-	<true></true>
-	<key>GOOGLE_APP_ID</key>
-	<string>1:105127397322:ios:26ba26cd368b5772c13133</string>
+	<string>com.bookm.io</string>
 </dict>
 </plist>
