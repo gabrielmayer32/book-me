@@ -32,7 +32,7 @@
       "package": "com.bookme.io"
     },
     "ios": {
-      "googleServicesFile": "./ios/GoogleService-Info.plist",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSCalendarsUsageDescription": "The app needs to access your calendar.",
         "NSRemindersUsageDescription": "Allow $(PRODUCT_NAME) to access your reminders",
