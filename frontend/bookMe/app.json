@@ -30,7 +30,7 @@
       "url": "https://u.expo.dev/cab1a67b-dd94-4b1f-a03a-121ab6e4007e"
     },
     "android": {
-      "googleServicesFile": "./android/app/google-services.json",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.READ_CALENDAR",
         "android.permission.WRITE_CALENDAR"
