@@ -56,6 +56,7 @@ class CustomUser(AbstractUser):
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
     business_name = models.CharField(max_length=100, blank=True, null=True)
     is_provider = models.BooleanField(default=False, help_text='Designates whether this user should be treated as a provider.')
+    birthdate = models.DateField(null=True, blank=True)
 
 from django.utils import timezone
 
@@ -104,3 +105,4 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f"{self.subscriber} subscribes to {self.provider}"
+    

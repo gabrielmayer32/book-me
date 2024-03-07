@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-mz#*&8@#-%60n8nmq&txpku(%(h-zbb&j=hypi*2oc79n-&52z
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["52b8-102-117-143-151.ngrok-free.app", "127.0.0.1"]
+ALLOWED_HOSTS = ["5e16-102-117-154-44.ngrok-free.app", "127.0.0.1"]
 
 
 # Application definition
@@ -133,3 +133,5 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,  # Adjust based on your needs
 }
+
+GOOGLE_CLIENT_ID = '105127397322-8mr6o3kar8c8db46oh4tqf9tbtmjffde.apps.googleusercontent.com'

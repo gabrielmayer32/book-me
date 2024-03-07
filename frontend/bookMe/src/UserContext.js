@@ -1,30 +1,62 @@
 // In UserContext.js
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BACKEND_URL } from '../utils/constants';
 
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
   const [userInfo, setUserInfo] = useState(null);
-  const [notificationCount, setNotificationCount] = useState(0); // Make sure this is correctly initialized
+  const [notificationCount, setNotificationCount] = useState(0);
 
-  const incrementNotificationCount = () => {
-    setNotificationCount((prevCount) => prevCount + 1);
+  const decrementNotificationCount = () => {
+    setNotificationCount((currentCount) => currentCount - 1);
+    // Optionally, persist this count to AsyncStorage or backend
+  };
+  // Define fetchNotificationsCount as a function inside UserProvider
+  const fetchNotificationsCount = async () => {
+    if (!userInfo) return; // Exit if no user is logged in
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/accounts/notifications/count/`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const { count } = await response.json();
+        setNotificationCount(count);
+      } else {
+        console.error('Failed to fetch notification count');
+      }
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
+    }
   };
 
-  const resetNotificationCount = () => {
-    setNotificationCount(0);
-    // If using AsyncStorage to track notification count,
-    // ensure you reset it there too.
-    AsyncStorage.setItem('notificationCount', JSON.stringify(0));
-  };
+  // Fetch notification count when userInfo changes and is not null
+  useEffect(() => {
+    if (userInfo) {
+      fetchNotificationsCount();
+    }
+  }, [userInfo]);
 
-  // Ensure notificationCount is included here
   return (
-    <UserContext.Provider value={{ userInfo, setUserInfo, notificationCount, incrementNotificationCount,resetNotificationCount  }}>
+    <UserContext.Provider value={{
+      userInfo, 
+      setUserInfo, 
+      decrementNotificationCount,
+      notificationCount, 
+      incrementNotificationCount: () => setNotificationCount(prevCount => prevCount + 1), 
+      resetNotificationCount: () => setNotificationCount(0),
+      fetchNotificationsCount, // Now including fetchNotificationsCount in the context value
+    }}>
       {children}
     </UserContext.Provider>
   );
 };
+
 
 export const useUser = () => useContext(UserContext);

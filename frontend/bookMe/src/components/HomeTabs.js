@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useUser } from '../UserContext';
 import { Badge } from 'react-native-paper';
 import LogoutButton from '../components/LogoutButton'; // Adjust with your actual logout button component path
+import Theme from '../theme/theme';
 
 const Tab = createBottomTabNavigator();
 
@@ -29,7 +30,8 @@ function AppTabs() {
         },
         tabBarActiveTintColor: 'white',
         tabBarInactiveTintColor: 'white',
-        tabBarStyle: { backgroundColor: '#4F8EF7' }, // Add this line to set the background color
+        tabBarStyle: { backgroundColor: Theme.colors.primary , paddingHorizontal: 10, paddingVertical: 5,},
+
 
       })}
     >
@@ -37,9 +39,11 @@ function AppTabs() {
         name="Home" 
         options={{
           title: 'Home',
-          headerRight: () => <LogoutButton navigation={navigation} />,
-          headerStyle: { backgroundColor: '#4F8EF7' },
+          headerRight: () => <LogoutButton navigation={navigation} color="white" />,
+          headerStyle: { backgroundColor: Theme.colors.primary },
           headerTintColor: 'white',
+              headerTitleAlign: 'center', // Add this line
+
         }}
         component={HomeStackScreen} 
         listeners={({ navigation, route }) => ({
@@ -55,9 +59,11 @@ function AppTabs() {
       <Tab.Screen name="Bookings" 
       options={{
         title: 'Bookings',
-        headerRight: () => <LogoutButton navigation={navigation} />,
-        headerStyle: { backgroundColor: '#4F8EF7' },
+        headerRight: () => <LogoutButton navigation={navigation} color="white" />,
+        headerStyle: { backgroundColor: Theme.colors.primary },
         headerTintColor: 'white',
+    headerTitleAlign: 'center', // Add this line
+
       }}
       component={BookingsScreen} />
       <Tab.Screen
@@ -66,9 +72,10 @@ function AppTabs() {
           component={NotificationScreen}
           options={{
             title: 'Notifications',
-            headerRight: () => <LogoutButton navigation={navigation} />,
-            headerStyle: { backgroundColor: '#4F8EF7' },
+            headerRight: () => <LogoutButton navigation={navigation} color="white"/>,
+            headerStyle: { backgroundColor: Theme.colors.primary },
             headerTintColor: 'white',
+    headerTitleAlign: 'center', // Add this line
 
             tabBarIcon: ({ focused, color, size }) => (
               <View>

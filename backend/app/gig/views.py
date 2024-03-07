@@ -71,22 +71,25 @@ class BookGigView(APIView):
             return Response({'error': 'This gig is fully booked.'}, status=400)
         print(request.data)
         with transaction.atomic():
-            booking = Booking.objects.create(
-                user=request.user,
-                gig_instance=gig_instance,
-                number_of_slots=number_of_slots,
-                event_id = request.data.get('event_id'),
-                status=Booking.StatusChoices.PENDING 
-            )
-
-            # Create a notification for the provider
-            Notification.objects.create(
+            notification = Notification.objects.create(
                 recipient=gig_instance.gig.provider,
                 actor=request.user.username,  # Assuming username is a meaningful identifier
                 verb=f'booked {number_of_slots} slots in your gig',
                 description=f'Your gig "{gig_instance.gig.title}" has been booked.',
                 action_object_url=f'/gig/{gig_instance_id}/'  # Example action URL, adjust as needed
             )
+
+            booking = Booking.objects.create(
+                user=request.user,
+                gig_instance=gig_instance,
+                number_of_slots=number_of_slots,
+                event_id = request.data.get('event_id'),
+                status=Booking.StatusChoices.PENDING,
+            )
+            booking.notification = notification
+            booking.save()
+            # Create a notification for the provider
+            
 
             # Sending push notification
             provider_tokens = ExpoPushToken.objects.filter(user=gig_instance.gig.provider)
@@ -363,6 +366,11 @@ class AcceptBookingView(APIView):
             booking.status = Booking.StatusChoices.ACCEPTED
             booking.save()
 
+            if booking.notification:
+                notification = booking.notification
+                notification.unread = False
+                notification.save()
+
             # Create a notification for the booking user
             notification = Notification.objects.create(
                 recipient=booking.user,
@@ -392,6 +400,11 @@ class DeclineBookingView(APIView):
         booking.status = Booking.StatusChoices.DECLINED
         booking.number_of_slots = 0
         booking.save()
+
+        if booking.notification:
+            notification = booking.notification
+            notification.unread = False
+            notification.save()
         # Create a notification for the booking user
         notification = Notification.objects.create(
             recipient=booking.user,

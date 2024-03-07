@@ -8,6 +8,7 @@ import { Dimensions } from 'react-native'; // Import Dimensions
 import moment from 'moment'; // Import moment
 import { useUser } from '../UserContext';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Assuming you're using MaterialCommunityIcons
 
          
 
@@ -83,6 +84,8 @@ const SwipeableNotificationItem = ({ item, onDelete }) => {
     }
     onDelete(item.id);
   };
+
+  
 
   return (
     <Swipeable
@@ -270,18 +273,27 @@ useFocusEffect(
   }, [resetNotificationCount])
 );
 
+
+
 return (
   <View style={styles.container}>
-    <FlatList
-      data={notifications}
-      keyExtractor={item => item.id.toString()}
-      renderItem={({ item }) => (
-        <SwipeableNotificationItem
-          item={item}
-          onDelete={handleDeleteNotification}
-        />
-      )}
-    />
+     {notifications.length > 0 ? (
+      <FlatList
+        data={notifications}
+        keyExtractor={item => item.id.toString()}
+        renderItem={({ item }) => (
+          <SwipeableNotificationItem
+            item={item}
+            onDelete={handleDeleteNotification}
+          />
+        )}
+      />
+    ) : (
+      <View style={styles.centeredMessage}>
+        <Icon name="bell-remove-outline" size={100} color="#ccc" />
+        <Text style={styles.messageText}>No notifications yet</Text>
+      </View>
+    )}
   </View>
   );
 };
@@ -289,6 +301,16 @@ return (
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  centeredMessage: {
+    alignItems: 'center', // Center the icon and text horizontally
+    justifyContent: 'center', // Center the content vertically in the screen
+    flex: 1, // Take up all available space to ensure centering
+  },
+  messageText: {
+    marginTop: 20, // Space between the icon and the text
+    fontSize: 18,
+    color: '#ccc',
   },
   title: {
     fontSize: 24,

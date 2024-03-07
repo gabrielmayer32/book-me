@@ -11,7 +11,7 @@ import {Button} from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {BACKEND_URL} from '../../utils/constants/';
 import CachedImage from 'expo-cached-image';
-
+import Theme from '../theme/theme';
 
 
 const HomeScreen = () => {
@@ -268,9 +268,9 @@ const HomeScreen = () => {
     createButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: '#0AB5C8',
+      backgroundColor: Theme.colors.secondary,
       padding: 10,
-      borderRadius: 20,
+      borderRadius: 10,
       justifyContent: 'center',
       width: 300,
     },

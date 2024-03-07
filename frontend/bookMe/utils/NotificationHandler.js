@@ -24,27 +24,28 @@ const NotificationHandler = () => {
     const notificationReceivedListener = Notifications.addNotificationReceivedListener(async (notification) => {
       console.log('Notification received:', notification);
       const data = notification.request.content.data;
-      console.log('Notification data:', data);
+      
+      // Increment notification count here
+      incrementNotificationCount(); // This should update the context state
   
       if (data.action === 'deleteCalendarEvent' && data.eventId) {
         await deleteCalendarEvent(data.eventId);
       }
     });
   
+    // No changes needed in this part
     const notificationResponseListener = Notifications.addNotificationResponseReceivedListener((response) => {
       console.log('Notification tapped, response received!');
       const data = response.notification.request.content.data;
-      incrementNotificationCount(); // Perform context or state updates
-  
-      // Additional logic based on notification interaction
+      // incrementNotificationCount(); // This might be redundant if you're only incrementing on notification received
     });
   
-    // Cleanup function
     return () => {
       Notifications.removeNotificationSubscription(notificationReceivedListener);
       Notifications.removeNotificationSubscription(notificationResponseListener);
     };
   }, [incrementNotificationCount]);
+  
 
   return null;
 };

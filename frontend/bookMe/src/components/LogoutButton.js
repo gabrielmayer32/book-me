@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {BACKEND_URL} from '../../utils/constants/';
 
-const LogoutButton = ({ navigation }) => {
+const LogoutButton = ({ navigation, color = 'black' }) => {
   const handleLogout = async () => {
     try {
       // Optionally: Remove the Expo Push Token from the backend
@@ -52,8 +52,8 @@ const LogoutButton = ({ navigation }) => {
   };
 
   return (
-    <TouchableOpacity onPress={handleLogoutPress}>
-      <Icon name="logout" size={24} color="white" />
+    <TouchableOpacity onPress={handleLogoutPress} style={{ marginLeft:30, marginRight: 5 }}>
+      <Icon name="logout" size={20} color={color} />
     </TouchableOpacity>
   );
 };

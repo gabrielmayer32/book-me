@@ -163,6 +163,7 @@ class Booking(models.Model):
     number_of_slots = models.PositiveIntegerField()
     status = models.CharField(max_length=10, choices=StatusChoices.choices, default=StatusChoices.PENDING)
     event_id = models.CharField(max_length=255, null=True, blank=True)
+    notification = models.ForeignKey('accounts.Notification', on_delete=models.SET_NULL, null=True, blank=True, related_name='booking_notifications')
 
     def __str__(self):
         return f"{self.user.username} booked {self.number_of_slots} slots for {self.gig_instance.gig.title} on {self.booked_on.strftime('%Y-%m-%d')} - {self.status}"

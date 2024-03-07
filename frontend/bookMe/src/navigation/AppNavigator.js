@@ -16,6 +16,7 @@ import ActivityCollaborators from '../screens/ActivityCollaboratorsScreen';
 import ProviderNotificationScreen from '../screens/ProviderNotificationScreen';
 import { LinkingOptions } from '@react-navigation/native';
 import TemplateGigListScreen from '../screens/TemplateGigListScreen';
+import SignupScreen from '../screens/SignupScreen';
 
 const Stack = createStackNavigator();
 
@@ -37,6 +38,7 @@ function AppNavigator() {
     <NavigationContainer linking={linking}>
       <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Signup" component={SignupScreen} />
         <Stack.Screen name="HomeTabs" component={AppTabs} />
         <Stack.Screen name="RecurringGigInstances" component={RecurringGigInstancesScreen} />
         <Stack.Screen name="ProviderNotificationScreen" component={ProviderNotificationScreen} />

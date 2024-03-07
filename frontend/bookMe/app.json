@@ -1,8 +1,13 @@
 {
+  "name": "main",
   "expo": {
-    "name": "bookMe",
-    "slug": "bookMe",
+    "name": "main",
+    "slug": "main",
+    "version": "1.0.0",
+    "main": "./src/index.js",
     "plugins": [
+      "@react-native-google-signin/google-signin",
+
       [
         "expo-calendar",
         {
@@ -19,8 +24,12 @@
     "updates": {
       "url": "https://u.expo.dev/cab1a67b-dd94-4b1f-a03a-121ab6e4007e"
     },
-    "android": {},
-    "ios": {}
+    "android": {
+      "googleServicesFile": "./google-services.json"
+    },
+    "ios": {
+      "googleServicesFile": "./ios/GoogleService-Info.plist"
+    }
   },
   "updates": {
     "fallbackToCacheTimeout": 0

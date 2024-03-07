@@ -74,6 +74,17 @@ const BookingsScreen = () => {
       };
 
     
+    
+    if (bookings.length === 0) {
+    // Display the empty state with the calendar icon and message
+    return (
+        <View style={styles.emptyContainer}>
+            <Icon name="calendar-blank" size={100} color="#cccccc" style={styles.calendarIcon} />
+            <Text style={styles.emptyText}>You have no bookings yet</Text>
+        </View>
+    );
+}
+
 
     return (
         <View style={styles.container}>
@@ -104,6 +115,22 @@ const styles = StyleSheet.create({
     detailText: {
         marginLeft: 8, // Adjust spacing
         fontSize: 14, // Increase readability
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    calendarIcon: {
+        backgroundColor: '#f0f0f0', // Light grey background
+        borderRadius: 50, // Make it round
+        padding: 20,
+    },
+    emptyText: {
+        marginTop: 20,
+        fontSize: 18,
+        color: '#666666',
     },
     statusContainer: {
         marginTop: 5,

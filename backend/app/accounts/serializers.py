@@ -29,3 +29,22 @@ class NotificationSerializer(serializers.ModelSerializer):
         if obj.provider.profile_picture:
             return request.build_absolute_uri(obj.provider.profile_picture.url)
         return None
+    
+from rest_framework import serializers
+from .models import CustomUser
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class CustomLoginUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'email', 'birthdate', 'phone_number', 'password')
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        validated_data['email'] = validated_data['email'].lower()
+        validated_data['username'] = validated_data['email']
+        user = User.objects.create_user(**validated_data)
+        return user

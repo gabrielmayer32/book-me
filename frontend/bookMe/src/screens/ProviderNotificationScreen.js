@@ -8,8 +8,9 @@ import CustomAppBar from '../components/CustomProviderBar';
 import BookingRequestItem from '../components/BookingRequestItem';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {BACKEND_URL} from '../../utils/constants/';
+
 const ProviderNotificationScreen = ({ navigation }) => {
-    const { userInfo, resetNotificationCount } = useUser();
+    const { userInfo, resetNotificationCount ,  decrementNotificationCount} = useUser();
     const [bookingRequests, setBookingRequests] = useState([]);
   
     useEffect(() => {
@@ -45,6 +46,7 @@ const ProviderNotificationScreen = ({ navigation }) => {
               'X-CSRFToken': csrfToken,
             } }); // Replace with your token
             fetchBookingRequests();
+            decrementNotificationCount();
             navigation.navigate('ProviderDashboard');
         } catch (error) {
             console.error('Failed to accept booking:', error);
@@ -61,6 +63,7 @@ const ProviderNotificationScreen = ({ navigation }) => {
               'Content-Type': 'application/json',
               'X-CSRFToken': csrfToken,
             } }); // Replace with your token
+            decrementNotificationCount();
             fetchBookingRequests();
             navigation.navigate('ProviderDashboard');
         } catch (error) {

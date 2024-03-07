@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Activity
-from .serializers import ActivitySerializer, CustomUserSerializer
+from .serializers import ActivitySerializer, CustomLoginUserSerializer, CustomUserSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from .models import Notification
@@ -117,6 +117,7 @@ def receive_expo_push_token(request):
         data = json.loads(request.body)
         user_id = data.get('userId')
         token = data.get('expoPushToken')
+        print(token)
         
         user = CustomUser.objects.get(id=user_id)
         ExpoPushToken.objects.update_or_create(user=user, defaults={'token': token})
@@ -243,3 +244,78 @@ class LogoutView(APIView):
         logout(request)
         
         return Response({"success": "User logged out successfully"}, status=status.HTTP_200_OK)
+
+from rest_framework import status, views
+from rest_framework.response import Response
+from .serializers import CustomUserSerializer
+
+class CreateUserView(views.APIView):
+    def post(self, request):
+        print(request.data)
+        serializer = CustomLoginUserSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class NotificationCountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        count = Notification.objects.filter(recipient=request.user, unread=True).count()
+        print(count)
+        return JsonResponse({"count": count})
+
+
+from django.http import JsonResponse
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from django.contrib.auth import login
+from .models import User  # Import your user model
+from django.conf import settings
+
+@csrf_exempt
+def google_login(request):
+    # This view expects a POST request with 'idToken' in the body
+    if request.method == "POST":
+        data = json.loads(request.body)
+        
+        # Extract the idToken from the parsed data
+        token = data.get('idToken')
+        try:
+            # Specify the GOOGLE_CLIENT_ID here
+            idinfo = id_token.verify_oauth2_token(token, requests.Request(), settings.GOOGLE_CLIENT_ID)
+            print(token)
+            # ID token is valid. Get or create the user.
+            userid = idinfo['sub']
+            email = idinfo.get('email')
+            first_name = idinfo.get('given_name', "")
+            last_name = idinfo.get('family_name', "")
+            
+            user, created = User.objects.get_or_create(username=email, defaults={'first_name': first_name, 'last_name': last_name, 'email': email})
+            
+            if created:
+                # If the user is created, you may set an unusable password if you don't want to use Google for all future logins
+                user.set_unusable_password()
+                user.save()
+
+            # Authenticate the user
+            login(request, user)
+
+            # Prepare the user info response
+            user_info = {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "firstName": user.first_name,
+                "isProvider": user.is_provider,
+                "profilePicture": request.build_absolute_uri(user.profile_picture.url) if user.profile_picture else None,
+            }
+            csrf_token = get_token(request)  # Get or create the CSRF token
+            return JsonResponse({"success": True, "user": user_info, "csrfToken": csrf_token}, status=200)
+        
+        except ValueError:
+            # Invalid token
+            return JsonResponse({"success": False, "error": "Invalid token"})
