@@ -46,6 +46,7 @@ class Gig(models.Model):
     longitude = models.FloatField(null=True, blank=True)  
     address = models.CharField(max_length=255, null=True, blank=True)
     is_template = models.BooleanField(default=False)
+    package_unapplicable = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         is_new = self._state.adding
@@ -57,9 +58,10 @@ class Gig(models.Model):
             else:
                 self.create_single_gig_instance()
 
-    def create_gig_instances(self):
+    def create_gig_instances(self, duration_months=1, duration_weeks=0):
+        """Create gig instances for a recurring gig with specified duration."""
         with transaction.atomic():
-            dates = self.calculate_gig_dates()
+            dates = self.calculate_gig_dates(duration_months, duration_weeks)
             for date in dates:
                 GigInstance.objects.create(
                     gig=self,
@@ -83,15 +85,17 @@ class Gig(models.Model):
             )
 
 
-    def calculate_gig_dates(self):
+    def calculate_gig_dates(self, duration_months=0, duration_weeks=0):
         if not self.is_recurring or not self.recurring_days.exists():
             return []
 
-        # Fetch the weekday integers for the recurring_days IDs
-        recurring_weekdays = [day.weekday for day in self.recurring_days.all()]
+        # Initialize start_date to the next day to ensure we don't double count
+        start_date = datetime.now().date() + timedelta(days=1)
+        months_added = timedelta(days=30 * duration_months)  # Approximate months to days
+        weeks_added = timedelta(weeks=duration_weeks)
+        end_date = datetime.now().date() + months_added + weeks_added
 
-        start_date = datetime.now().date()
-        end_date = start_date + timedelta(weeks=12)
+        recurring_weekdays = [day.weekday for day in self.recurring_days.all()]
         dates = []
 
         while start_date <= end_date:
@@ -100,6 +104,8 @@ class Gig(models.Model):
             start_date += timedelta(days=1)
 
         return dates
+
+
 
    
 
@@ -148,6 +154,7 @@ class GigInstance(models.Model):
         return f" [{self.id}] User : {self.gig.provider.first_name} - {self.gig.title} - {self.date} ({self.start_time} - {self.end_time})"
 from datetime import timedelta
 import logging
+from accounts.models import PackageSubscription 
 logger = logging.getLogger(__name__)
 
 class Booking(models.Model):
@@ -164,7 +171,7 @@ class Booking(models.Model):
     status = models.CharField(max_length=10, choices=StatusChoices.choices, default=StatusChoices.PENDING)
     event_id = models.CharField(max_length=255, null=True, blank=True)
     notification = models.ForeignKey('accounts.Notification', on_delete=models.SET_NULL, null=True, blank=True, related_name='booking_notifications')
-
+    package_subscription = models.ForeignKey('accounts.PackageSubscription', on_delete=models.SET_NULL, null=True, blank=True, related_name='bookings')  # Added line
     def __str__(self):
         return f"{self.user.username} booked {self.number_of_slots} slots for {self.gig_instance.gig.title} on {self.booked_on.strftime('%Y-%m-%d')} - {self.status}"
     

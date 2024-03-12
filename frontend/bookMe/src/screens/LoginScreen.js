@@ -20,8 +20,11 @@ import {
 } from '@react-native-google-signin/google-signin';
 
 GoogleSignin.configure({
-  webClientId: '417222620085-ldlj23rrsdo9tqi0svedhf1agg8at38n.apps.googleusercontent.com', 
+  webClientId: '417222620085-sck91bphem0d4cfa95gf95gl01rd0l6k.apps.googleusercontent.com',
+  iosClientId: '417222620085-rc6v0legpp1i3r7ep5e0kaje9alamdrn.apps.googleusercontent.com',
   offlineAccess: true,
+  offlineAccess: true,
+  forceCodeForRefreshToken: true,
 
 
 });
@@ -41,7 +44,8 @@ const LoginScreen = ({ navigation }) => {
   const [expoPushToken, setExpoPushToken] = useState('');
   const [notification, setNotification] = useState(false);
   const notificationListener = useRef();
-  const responseListener = useRef();  const { setUserInfo, fetchNotificationsCount } = useUser();
+  const responseListener = useRef();  
+  const { setUserInfo, fetchNotificationsCount } = useUser();
   const [user, setUser] = useState(null);
   useEffect(() => {
     registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
@@ -64,9 +68,9 @@ const LoginScreen = ({ navigation }) => {
     try {
       let token = await registerForPushNotificationsAsync();
       console.log(token);
-      AsyncStorage.setItem('expoPushToken', token);
-      const expoPushToken = await AsyncStorage.getItem('expoPushToken');
-      console.log(expoPushToken);
+      // AsyncStorage.setItem('expoPushToken', token);
+      // const expoPushToken = await AsyncStorage.getItem('expoPushToken');
+      // console.log(expoPushToken);
       
       const response = await fetch(`${BACKEND_URL}/accounts/login/`, {
         method: 'POST',
@@ -76,11 +80,14 @@ const LoginScreen = ({ navigation }) => {
         body: `username=${username}&password=${password}`,
       });
       const csrfToken = response.headers.get('set-cookie').split(';')[0].split('=')[1];
-      await AsyncStorage.setItem('csrfToken', csrfToken);
+      
+      if (csrfToken){
+        await AsyncStorage.setItem('csrfToken', csrfToken);
+      }
   
       const result = await response.json();
       if (result.success && result.user) {
-        setUserInfo(result.user); // Set userInfo in global context
+        setUserInfo(result.user);
         fetchNotificationsCount(); // Fetch notifications count right after setting user info
         // Ensure the expoPushToken is not null or undefined before attempting to send it
         if (expoPushToken) {
@@ -101,6 +108,25 @@ const LoginScreen = ({ navigation }) => {
       console.error(error);
     }
   };
+
+  // async function registerForPushNotificationsAsync() {
+  //   let token;
+  //   const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  //   let finalStatus = existingStatus;
+  //   if (existingStatus !== 'granted') {
+  //     const { status } = await Notifications.requestPermissionsAsync();
+  //     finalStatus = status;
+  //   }
+  //   if (finalStatus !== 'granted') {
+  //     alert('Failed to get push token for push notification!');
+  //     return;
+  //   }
+  //   token = (await Notifications.getExpoPushTokenAsync({
+  //     projectId: 'cab1a67b-dd94-4b1f-a03a-121ab6e4007e',
+  //  })).data;
+  //   console.log(token);
+  //   return token;
+  // }
 
   async function registerForPushNotificationsAsync() {
     let token;
@@ -165,6 +191,7 @@ const LoginScreen = ({ navigation }) => {
       console.log('Google Sign In');
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
+      const userToken = await GoogleSignin.getTokens();
       console.log(userInfo);
   
       if (!userInfo) {
@@ -174,9 +201,12 @@ const LoginScreen = ({ navigation }) => {
   
       // Proceed with using userInfo.idToken as before
       const { idToken } = userInfo;
+      console.log(idToken);
       let token = await registerForPushNotificationsAsync();
       console.log(token);
-      await AsyncStorage.setItem('expoPushToken', token);
+      if (token) {
+        await AsyncStorage.setItem('expoPushToken', token);
+      }
   
       // Send the idToken to your backend
       const response = await fetch(`${BACKEND_URL}/accounts/google-login/`, {
@@ -186,13 +216,16 @@ const LoginScreen = ({ navigation }) => {
         },
         body: JSON.stringify({ idToken }),
       });
+      const csrfToken = response.headers.get('set-cookie').split(';')[0].split('=')[1];
+      await AsyncStorage.setItem('csrfToken', csrfToken);
+
   
       const result = await response.json();
       console.log(result);
       if (result.success && result.user) {
         setUserInfo(result.user); // Set userInfo in global context
         fetchNotificationsCount(); // Fetch notifications count right after setting user info
-  
+        
         // Ensure the expoPushToken is not null or undefined before attempting to send it
         if (expoPushToken) {
           await sendExpoPushToken(expoPushToken, result.user.id);
@@ -209,9 +242,21 @@ const LoginScreen = ({ navigation }) => {
         console.error("Authentication failed", result.message);
       }
     } catch (error) {
-      console.error("An error occurred during Google Sign In or subsequent processing:", error);
-    }
-  };
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+          console.log(error)
+          // user cancelled the login flow
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+          console.log(error)
+          // operation (e.g. sign in) is in progress already
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+          console.log(error)
+          // play services not available or outdated
+      } else {
+          console.log(error)
+          // some other error happened
+      }
+  }
+};
   
   
   

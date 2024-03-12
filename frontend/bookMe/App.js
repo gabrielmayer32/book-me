@@ -11,7 +11,7 @@ import NotificationHandler from './utils/NotificationHandler';
 import { Linking } from 'react-native';
 import snackbarManager from './utils/snackbarManager';
 import * as Device from 'expo-device';
-
+import { SubscriptionProvider } from './src/SubscriptionContext'; 
 import { UserContext } from './src/UserContext'; // Adjust the path as necessary
 import {
   GoogleSignin,
@@ -79,6 +79,7 @@ const App = () => {
   return (
     <PaperProvider theme={Theme}>
       <UserProvider>
+      <SubscriptionProvider>
         <NotificationHandler />
         <AppNavigator />
         <Snackbar
@@ -87,6 +88,7 @@ const App = () => {
           duration={3000}>
         {snackbarMessage}
         </Snackbar>
+        </SubscriptionProvider>
       </UserProvider>
     </PaperProvider>
   );

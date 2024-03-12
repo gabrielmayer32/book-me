@@ -4,8 +4,13 @@ import { TouchableOpacity, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {BACKEND_URL} from '../../utils/constants/';
+import { useUser } from '../UserContext';
 
 const LogoutButton = ({ navigation, color = 'black' }) => {
+
+
+  const { logoutUser } = useUser();
+
   const handleLogout = async () => {
     try {
       // Optionally: Remove the Expo Push Token from the backend
@@ -23,9 +28,8 @@ const LogoutButton = ({ navigation, color = 'black' }) => {
       });
 
       // Clear any stored user info or tokens
-      await AsyncStorage.removeItem('userInfo');
-      await AsyncStorage.removeItem('expoPushToken');
 
+      logoutUser(); // Clear user info from context
       // Reset navigation to the Login screen
       navigation.reset({
         index: 0,

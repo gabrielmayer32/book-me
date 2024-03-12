@@ -222,8 +222,8 @@ return (
             
             
           )}
-          renderItem={renderGigItem}
-        />
+          renderItem={({ item }) => renderGigItem({ item, navigation })} // Ensure navigation is passed here
+          />
       </ScreenLayout>
     </>
   );

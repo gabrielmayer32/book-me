@@ -21,7 +21,7 @@ const ProviderDashboardScreen = ({ route, navigation }) => {
 
   //   useEffect(() => {
   //     console.log(userInfo)
-  //     fetchUpcomingGigs(userInfo.id);
+  //     fetchUpcomingGigs(userInfo?.id);
   //     fetchBookingRequests();
   // }, []);
 
@@ -65,7 +65,7 @@ const fetchBookingRequests = async () => {
     }));
     setBookingRequests(adjustedGigs);
     // Assuming fetchUpcomingGigs is defined elsewhere and works correctly
-    fetchUpcomingGigs(userInfo.id);
+    fetchUpcomingGigs(userInfo?.id);
   } catch (error) {
     console.error('Failed to fetch booking requests:', error);
     Alert.alert('Error', 'Failed to fetch booking requests.');
@@ -93,9 +93,9 @@ const fetchBookingRequests = async () => {
 
 useFocusEffect(
   useCallback(() => {
-      if (userInfo && userInfo.id) {
+      if (userInfo && userInfo?.id) {
           console.log('Fetching gigs and booking requests on focus');
-          fetchUpcomingGigs(userInfo.id);
+          fetchUpcomingGigs(userInfo?.id);
           fetchBookingRequests();
       }
   }, [userInfo])
@@ -111,14 +111,17 @@ useFocusEffect(
     />
     
     <ScreenLayout >
+
+      
+      
       <ScrollView style={{ flex: 1 }}>
     <View style={styles.profileSection}>
-        <Image source={{ uri: userInfo.profilePicture }} style={styles.profilePic} />
-        <Text style={styles.name}>{userInfo.firstName}</Text>
-        <Text style={styles.bio}>{userInfo.activity.name}</Text>
+        <Image source={{ uri: userInfo?.profilePicture }} style={styles.profilePic} />
+        <Text style={styles.name}>{userInfo?.firstName}</Text>
+        <Text style={styles.bio}>{userInfo?.activity.name}</Text>
         
         <View style={styles.socialMediaContainer}>
-                        {userInfo.socialMedia.map((social, index) => (
+                        {userInfo?.socialMedia.map((social, index) => (
                             <TouchableOpacity key={index} style={styles.socialMediaItem} onPress={() => Linking.openURL(social.url)}>
                                 <Icon name={getSocialIconName(social.platform__icon_name)} size={24} color="#4A90E2" />
                                 <Text style={styles.socialMediaText}>{social.username}</Text>
@@ -128,12 +131,12 @@ useFocusEffect(
 
         <View style={styles.contactInfo}>
           <Icon name="email" size={20} color="#4A90E2" />
-          <Text style={styles.contactText}>{userInfo.email}</Text>
+          <Text style={styles.contactText}>{userInfo?.email}</Text>
         </View>
 
         <View style={styles.contactInfo}>
           <Icon name="phone" size={20} color="#4A90E2" />
-          <Text style={styles.contactText}>{userInfo.phoneNumber}</Text>
+          <Text style={styles.contactText}>{userInfo?.phoneNumber}</Text>
         </View>
       </View>
       
@@ -148,7 +151,7 @@ useFocusEffect(
           renderItem={({ item }) => // In ProviderDashboardScreen
           <GigItem
             gig={item}
-            fetchUpcomingGigs={() => fetchUpcomingGigs(userInfo.id)}
+            fetchUpcomingGigs={() => fetchUpcomingGigs(userInfo?.id)}
             fetchBookingRequests={fetchBookingRequests}
           />
           }

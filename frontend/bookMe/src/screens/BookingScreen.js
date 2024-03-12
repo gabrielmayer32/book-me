@@ -15,12 +15,16 @@ const BookingsScreen = () => {
     const { userInfo } = useUser();
     const [bookings, setBookings] = useState([]);
     const [menuVisible, setMenuVisible] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+
+
 
     useFocusEffect(
         useCallback(() => {
         const fetchBookings = async () => {
             try {
-                // Adjust this URL to match your API endpoint
+                setIsLoading(true);
                 const response = await axios.get(`${BACKEND_URL}/gig/bookings/user/${userInfo.id}/`);
                 const adjustedBookings = response.data.map(booking => ({
                     ...booking,
@@ -29,12 +33,14 @@ const BookingsScreen = () => {
                     gig_end_time: moment(booking.gig_end_time, 'HH:mm').add(4, 'hours').format('HH:mm'),
                 }));
                 setBookings(adjustedBookings);
+                setIsLoading(false);
+
             } catch (error) {
                 console.error('Failed to fetch bookings:', error);
             }
         };
         fetchBookings();
-    }, [userInfo.id]) // Consider adding more dependencies if there are other factors that should trigger the data fetch
+    }, [userInfo?.id]) // Consider adding more dependencies if there are other factors that should trigger the data fetch
     );
 
     const handleCancelBooking = async (bookingId) => {

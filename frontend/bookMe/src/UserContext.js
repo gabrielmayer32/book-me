@@ -9,6 +9,16 @@ export const UserProvider = ({ children }) => {
   const [userInfo, setUserInfo] = useState(null);
   const [notificationCount, setNotificationCount] = useState(0);
 
+  const logoutUser = async () => {
+    // Your logout logic here
+    setUserInfo(null); // Clear user info on logout
+    await AsyncStorage.removeItem('expoPushToken');
+    await AsyncStorage.removeItem('csrfToken');
+    await AsyncStorage.removeItem('userInfo');
+    // Add any additional cleanup as necessary
+  };
+
+
   const decrementNotificationCount = () => {
     setNotificationCount((currentCount) => currentCount - 1);
     // Optionally, persist this count to AsyncStorage or backend
@@ -49,6 +59,7 @@ export const UserProvider = ({ children }) => {
       setUserInfo, 
       decrementNotificationCount,
       notificationCount, 
+      logoutUser, // Make sure this is included
       incrementNotificationCount: () => setNotificationCount(prevCount => prevCount + 1), 
       resetNotificationCount: () => setNotificationCount(0),
       fetchNotificationsCount, // Now including fetchNotificationsCount in the context value

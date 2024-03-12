@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from accounts.models import CustomUser, ExpoPushToken, Notification, Subscription
+from accounts.models import CustomUser, ExpoPushToken, Notification, PackageSubscription, Subscription
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -64,43 +64,116 @@ class BookGigView(APIView):
 
     def post(self, request, *args, **kwargs):
         gig_instance_id = request.data.get('gig_instance_id')
-        number_of_slots = request.data.get('number_of_slots')
-        
-        gig_instance = GigInstance.objects.get(id=gig_instance_id)
-        if gig_instance.is_fully_booked:
-            return Response({'error': 'This gig is fully booked.'}, status=400)
-        print(request.data)
-        with transaction.atomic():
-            notification = Notification.objects.create(
-                recipient=gig_instance.gig.provider,
-                actor=request.user.username,  # Assuming username is a meaningful identifier
-                verb=f'booked {number_of_slots} slots in your gig',
-                description=f'Your gig "{gig_instance.gig.title}" has been booked.',
-                action_object_url=f'/gig/{gig_instance_id}/'  # Example action URL, adjust as needed
-            )
-
-            booking = Booking.objects.create(
-                user=request.user,
-                gig_instance=gig_instance,
-                number_of_slots=number_of_slots,
-                event_id = request.data.get('event_id'),
-                status=Booking.StatusChoices.PENDING,
-            )
-            booking.notification = notification
-            booking.save()
-            # Create a notification for the provider
+        try:
+            gig_instance = GigInstance.objects.get(id=gig_instance_id)
+            if gig_instance.is_fully_booked:
+                return Response({'error': 'This gig is fully booked.'}, status=400)
             
+            # Check if the user has an active subscription
+            subscription = PackageSubscription.objects.filter(
+                user=request.user, 
+                package__owner=gig_instance.gig.provider, 
+                status='confirmed',
+                number_of_bookings__gt=0  # Ensure there's at least one booking left
+            ).first()
+            
+            with transaction.atomic():
+                if subscription:
+                   
+                
+                    verb = 'used 1 booking from their package'
+                else:
+                    verb = 'booked a slot'
+                
+                # Create the booking
+                booking = Booking.objects.create(
+                    user=request.user,
+                    gig_instance=gig_instance,
+                    event_id=request.data.get('event_id'),
+                    status=Booking.StatusChoices.PENDING,
+                )
+                
+                
+                # Create a notification for the provider
+                notification = Notification.objects.create(
+                    recipient=gig_instance.gig.provider,
+                    actor=request.user.username,
+                    verb=verb,
+                    description=f'Your gig "{gig_instance.gig.title}" has been booked.',
+                    action_object_url=f'/gig/{gig_instance_id}/'  # Adjust URL as necessary
+                )
+                booking.notification = notification
+                booking.save()
+                
+                # Sending push notification to the provider
+                provider_tokens = ExpoPushToken.objects.filter(user=gig_instance.gig.provider)
+                for token in provider_tokens:
+                    send_push_notification(
+                        token.token,
+                        'New Booking',
+                        f'{request.user.username} {verb} in your gig "{gig_instance.gig.title}".',
+                        {"targetScreen": "GigDetail", "id": str(gig_instance.gig.id)}
+                    )
+                
+                return Response({'message': 'Booking successful.', 'booking_id': booking.id})
+        
+        except GigInstance.DoesNotExist:
+            return Response({'error': 'Gig instance not found.'}, status=404)
+        
+class BookGigWithSubscriptionView(APIView):
+    permission_classes = [IsAuthenticated]
 
-            # Sending push notification
-            provider_tokens = ExpoPushToken.objects.filter(user=gig_instance.gig.provider)
-            for token in provider_tokens:
-                send_push_notification(
-                    token.token,
-                    'New Booking',
-                    f'Your gig "{gig_instance.gig.title}" has been booked.', {"targetScreen": "GigDetail", "id": str(gig_instance.gig.id)}
+    def post(self, request, *args, **kwargs):
+
+        gig_instance_id = request.data.get('gig_instance_id')
+        package_id = request.data.get('package_subscription_id')  
+        event_id = request.data.get('event_id')
+        print(gig_instance_id)
+        
+        try:
+            gig_instance = GigInstance.objects.get(id=gig_instance_id)
+            if gig_instance.is_fully_booked:
+                return Response({'error': 'This gig is fully booked.'}, status=400)
+            # Retrieve the package subscription based on package_id and the user
+            package_subscription = PackageSubscription.objects.filter(
+                package_id=package_id,
+                user=request.user,
+                status='confirmed'
+            ).first()
+            print(package_subscription)
+            if package_subscription.bookings_made >= package_subscription.package.number_of_bookings:
+                print('declined')
+                return Response({'error': 'Invalid package subscription or no bookings left.'}, status=400)
+
+            with transaction.atomic():
+                PackageSubscription.objects.filter(id=package_subscription.id).update(bookings_made=F('bookings_made') + 1)
+
+                verb = 'used 1 booking from their package'
+                print('ok')
+                # Create the booking, linking to package_subscription
+                booking = Booking.objects.create(
+                    user=request.user,
+                    gig_instance=gig_instance,
+                    event_id=event_id,
+                    number_of_slots=1,
+                    status=Booking.StatusChoices.PENDING,
+                    package_subscription=package_subscription,
                 )
 
-        return Response({'message': 'Booking successful.', 'booking_id': booking.id})
+                # Send a push notification to the provider
+                provider_tokens = ExpoPushToken.objects.filter(user=gig_instance.gig.provider)
+                for token in provider_tokens:
+                    send_push_notification(
+                        token.token,
+                        'New Booking',
+                        f'Your gig "{gig_instance.gig.title}" has been booked using a package.',
+                        {"targetScreen": "GigDetail", "id": str(gig_instance.gig.id)}
+                    )
+
+                return Response({'message': 'Booking successful using package.', 'booking_id': booking.id})
+        except GigInstance.DoesNotExist:
+            return Response({'error': 'Gig instance not found.'}, status=404)
+
 
 from django.utils import timezone
 from django.db.models import ExpressionWrapper, F, DateTimeField
@@ -249,6 +322,7 @@ class UpcomingGigsView(APIView):
             'latitude': gig.gig.latitude,
             'longitude': gig.gig.longitude,
             'address': gig.gig.address,
+            'package_unapplicable': gig.gig.package_unapplicable,
         } for gig in gigs]
 
         return Response(gigs_data)
@@ -267,9 +341,25 @@ class CreateGigView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        # Default to 1 month if both duration_months and duration_weeks are not provided
+        duration_months = request.data.get('duration_months')
+        duration_weeks = request.data.get('duration_weeks')
+
+        # If both duration_months and duration_weeks are None, default to 1 month
+        if duration_months is None and duration_weeks is None:
+            duration_months = 1
+            duration_weeks = 0
+        else:
+            # Convert to int and default to 0 if None
+            duration_months = int(duration_months) if duration_months is not None else 0
+            duration_weeks = int(duration_weeks) if duration_weeks is not None else 0
+
         serializer = GigSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             gig = serializer.save(provider=request.user)
+            if gig.is_recurring:
+                gig.create_gig_instances(duration_months, duration_weeks)
+
             
             # Fetch all subscribers of the provider
             subscribers = Subscription.objects.filter(provider=request.user)

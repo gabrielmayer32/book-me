@@ -1,7 +1,7 @@
 from django.urls import path
 
 
-from .views import BookGigView, CancelBookingView, CreateGigView, GigDetailView, GigInstancesView, GigUpdateAPIView, ProviderGigsView, ProviderUpcomingGigsView, UpcomingGigsView, UpdateTemplateStatus, UserBookingsView, AcceptBookingView, BookingRequestsView, DeclineBookingView, gig_templates
+from .views import BookGigView, BookGigWithSubscriptionView, CancelBookingView, CreateGigView, GigDetailView, GigInstancesView, GigUpdateAPIView, ProviderGigsView, ProviderUpcomingGigsView, UpcomingGigsView, UpdateTemplateStatus, UserBookingsView, AcceptBookingView, BookingRequestsView, DeclineBookingView, gig_templates
 urlpatterns = [
     path('get/', ProviderGigsView.as_view(), name='provider-gigs'),
     path('create/', CreateGigView.as_view(), name='create-gig'),
@@ -20,6 +20,7 @@ urlpatterns = [
     path('update/<int:pk>/', GigUpdateAPIView.as_view(), name='gig-update'),
     path('templates/', gig_templates, name='gig-templates'),
     path('update-template-status/<int:gig_id>/', UpdateTemplateStatus.as_view(), name='update_template_status'),
+    path('book/with-subscription/', BookGigWithSubscriptionView.as_view(), name='book-gig-with-subscription')
 
 
 ]

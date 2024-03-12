@@ -106,3 +106,69 @@ class Subscription(models.Model):
     def __str__(self):
         return f"{self.subscriber} subscribes to {self.provider}"
     
+from django.db import models
+from django.core.validators import MinValueValidator
+from decimal import Decimal
+
+class Package(models.Model):
+    owner = models.ForeignKey(User, related_name='owned_packages', on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    duration = models.IntegerField(validators=[MinValueValidator(1)], help_text="Duration in days.")
+    number_of_bookings = models.IntegerField(validators=[MinValueValidator(0)], null=True, blank=True, help_text="Number of bookings allowed")
+    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at'] 
+    def __str__(self):
+        return self.name
+
+class PackageSubscription(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('declined', 'Declined'),
+    ]
+
+    user = models.ForeignKey(User, related_name='subscriptions', on_delete=models.CASCADE)
+    package = models.ForeignKey(Package, related_name='subscribers', on_delete=models.CASCADE)
+    start_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    bookings_made = models.IntegerField(default=0, validators=[MinValueValidator(0)])  # New field
+
+    def __str__(self):
+        return f"{self.user} subscribed to {self.package} on {self.start_date}"
+    def calculate_remaining_bookings(self):
+        total_bookings_allowed = self.package.number_of_bookings
+        bookings_made = self.bookings.count()  # Assuming you have a related name 'bookings' in the Booking model
+        return total_bookings_allowed - bookings_made
+    
+from django.shortcuts import get_object_or_404
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+
+
+
+from django.db import models
+
+class PaymentInformation(models.Model):
+    provider = models.OneToOneField(User, on_delete=models.CASCADE, related_name='payment_information')
+    accepts_cash = models.BooleanField(default=False, help_text='Accepts cash in hand')
+    
+    # For MCB Juice, which generally uses a phone number
+    mcb_juice_enabled = models.BooleanField(default=False, help_text='Accepts MCB Juice payments')
+    mcb_juice_number = models.CharField(max_length=20, blank=True, null=True, help_text='MCB Juice phone number')
+    
+    # For Internet Banking, details might include bank name and account number
+    internet_banking_enabled = models.BooleanField(default=False, help_text='Accepts internet banking payments')
+    internet_banking_details = models.TextField(blank=True, null=True, help_text='Internet banking details')
+    
+    # For payments by card, this might just be a boolean since actual card payments are not handled on the platform
+    accepts_card = models.BooleanField(default=False, help_text='Accepts card payments')
+
+    def __str__(self):
+        return f"Payment Information for {self.provider.username}"
+

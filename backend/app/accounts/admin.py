@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
-from .models import CustomUser, Activity, ExpoPushToken, Notification, SocialMedia, SocialPlatform, Category
+from .models import CustomUser, Activity, ExpoPushToken, Notification, Package, PackageSubscription, PaymentInformation, SocialMedia, SocialPlatform, Category, Subscription
 
 class CustomUserAdmin(BaseUserAdmin):
     model = CustomUser
@@ -23,3 +23,7 @@ admin.site.register(SocialMedia)
 admin.site.register(Category)
 admin.site.register(ExpoPushToken)
 admin.site.register(Notification)
+admin.site.register(Package)
+admin.site.register(PackageSubscription)
+admin.site.register(PaymentInformation)
+admin.site.register(Subscription)

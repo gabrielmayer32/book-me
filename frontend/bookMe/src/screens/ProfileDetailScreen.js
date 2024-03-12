@@ -12,6 +12,9 @@ import { Checkbox } from 'react-native-paper'; // Assuming you are using react-n
 import {addEventToCalendar} from '../components/addEventToCalendar'; // Import the function to add event to calendar
 import * as Calendar from 'expo-calendar';
 import snackbarManager from '../../utils/snackbarManager';
+import ProviderPackagesList from '../components/ProviderPackagesList'; // Adjust the path as necessary
+import { useSubscription } from '../SubscriptionContext'; // Adjust the path as necessary
+
 
 const ProfileDetailsScreen = ({ route }) => {
   const {
@@ -25,14 +28,29 @@ const ProfileDetailsScreen = ({ route }) => {
   } = route.params;
   const [upcomingGigs, setUpcomingGigs] = useState([]);
   const [isBookingModalVisible, setBookingModalVisible] = useState(false);
-  const [selectedSlots, setSelectedSlots] = useState(1);
   const [maxSlots, setMaxSlots] = useState(5); // Example max slots, this should come from gig data
   const [selectedGigInstanceId, setSelectedGigInstanceId] = useState(null);
-  const [isSubscribed, setIsSubscribed] = useState(route.params.is_subscribed);
   const [addToCalendar, setAddToCalendar] = useState(false);
   const [isBookingInProgress, setIsBookingInProgress] = useState(false);
   const [selectedGigDetails, setSelectedGigDetails] = useState(null);
   const [eventID, setEventID] = useState(null);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [selectedPaymentInfo, setSelectedPaymentInfo] = useState(null);
+  const { subscriptions } = useSubscription();
+  const [isSubscribed, setIsSubscribed] = useState(route.params.is_subscribed);
+
+  const [isSubscribedToProvider, setIsSubscribedToProvider] = useState(false);
+  const [selectedSlots, setSelectedSlots] = useState(1);
+
+  const [currentPackageName, setCurrentPackageName] = useState("your package");
+  const [currentPackage, setCurrentPackage] = useState(null);
+  const [currentPackageId, setCurentPackageId] = useState(null);
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [packageUnapplicable, setPackageUnapplicable] = useState(false);
+
+  console.log('WAWAWAW');
+  console.log(route.params);
 
   const handleToggleSubscription = async () => {
     const providerId = route.params.providerId;
@@ -60,6 +78,7 @@ const ProfileDetailsScreen = ({ route }) => {
       console.error("Error toggling subscription:", error);
     }
   };
+
 
   const confirmBookingAndAddToCalendar = async () => {
     if (isBookingInProgress) return;
@@ -96,8 +115,13 @@ const ProfileDetailsScreen = ({ route }) => {
       }
 
       // Now, call handleConfirmBooking and include eventId
-      await handleConfirmBooking(eventId);
-
+      if (isSubscribedToProvider && !packageUnapplicable) {
+        // Use a booking from the subscription
+        await useSubscriptionBooking(eventId);
+      } else {
+        // Proceed with standard booking process
+        await handleConfirmBooking(eventId);
+      }
       fetchUpcomingGigs();
     } catch (error) {
       console.error("Error booking gig:", error);
@@ -106,6 +130,43 @@ const ProfileDetailsScreen = ({ route }) => {
       setIsBookingInProgress(false);
       setBookingModalVisible(false);
     }
+  };
+
+  const useSubscriptionBooking = async (eventId) => {
+    const csrfToken = await AsyncStorage.getItem("csrfToken");
+    let requestBody = {
+      gig_instance_id: selectedGigInstanceId,
+      number_of_slots: selectedSlots,
+      event_id: eventId,
+    };
+
+    // If booking through a package subscription, include the package_subscription_id
+    if (isSubscribedToProvider) {
+      requestBody.package_subscription_id = currentPackageId; // Assuming currentPackage contains the package subscription ID
+    }
+    console.log('PACKAGE ID ')
+    console.log(currentPackageId)
+    // Assuming you have an endpoint to handle this
+    const response = await fetch(`${BACKEND_URL}/gig/book/with-subscription/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        "X-CSRFToken": csrfToken,
+      },
+      body: JSON.stringify(requestBody),
+
+    });
+  
+    if (!response.ok) {
+      throw new Error('Failed to book using subscription');
+    }
+  
+    // Handle successful booking with subscription
+    let message = `Booking successful using your package "${currentPackageName}".`;
+    if (eventId) {
+      message += " The event has been added to your calendar.";
+    }
+    alert(message);
   };
 
   const addEventToCalendar = async (eventDetails) => {
@@ -143,10 +204,11 @@ const ProfileDetailsScreen = ({ route }) => {
     return eventId;
   };
 
-  const handleBookPress = (gigInstanceId) => {
+  const handleBookPress = (gigInstanceId, package_unapplicable) => {
     const selectedGig = upcomingGigs.find((gig) => gig.id === gigInstanceId);
     if (selectedGig) {
-      setSelectedSlots(1); // Reset selected slots to 1
+      setSelectedSlots(1); 
+      setPackageUnapplicable(package_unapplicable);
       setMaxSlots(selectedGig.remaining_slots);
       setSelectedGigInstanceId(gigInstanceId);
       setSelectedGigDetails(selectedGig); // Save the entire gig object for later use
@@ -159,19 +221,31 @@ const ProfileDetailsScreen = ({ route }) => {
     if (isBookingInProgress) return;
     setIsBookingInProgress(true);
 
+    
+
     try {
       const csrfToken = await AsyncStorage.getItem("csrfToken");
+      let requestBody = {
+        gig_instance_id: selectedGigInstanceId,
+        number_of_slots: selectedSlots,
+        event_id: eventId,
+      };
+
+      // If booking through a package subscription, include the package_subscription_id
+      if (currentPackage && isSubscribedToProvider) {
+        console.log('PACKAGE ID ')
+        console.log(currentPackageId)
+        console.log(isSubscribedToProvider)
+        requestBody.package_subscription_id = currentSubscription.package.id; // Assuming currentPackage contains the package subscription ID
+      }
+  
       const response = await fetch(`${BACKEND_URL}/gig/book/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": csrfToken,
         },
-        body: JSON.stringify({
-          gig_instance_id: selectedGigInstanceId,
-          number_of_slots: selectedSlots,
-          event_id: eventId,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -244,6 +318,25 @@ const ProfileDetailsScreen = ({ route }) => {
   };
 
   useEffect(() => {
+    // Check if the user is subscribed to the current provider
+    const checkIsSubscribedToProvider = subscriptions.some(sub => sub.package.owner === providerId);
+    setIsSubscribedToProvider(checkIsSubscribedToProvider);
+
+    if (checkIsSubscribedToProvider) {
+      const currentSubscription = subscriptions.find(sub => sub.package.owner === providerId);
+      const currentPackageName = currentSubscription ? currentSubscription.package.name : "your package";
+      setCurentPackageId(currentSubscription.package.id);
+      setCurrentPackageName(currentPackageName);
+      console.log("Is subscribed to provider:", checkIsSubscribedToProvider);    }
+    
+  }, [subscriptions, providerId]);
+  
+ 
+
+  useEffect(() => {
+     // Assuming `subscriptions` is the array of subscription objects you fetched
+
+    
     fetchUpcomingGigs(); // Call this function on component mount
   }, [providerId]);
 
@@ -296,6 +389,7 @@ const ProfileDetailsScreen = ({ route }) => {
                   address={gig.address}
                   endTime={gig.end_time}
                   description={gig.description}
+                  package_unapplicable={gig.package_unapplicable}
                   onBookPress={() => handleBookPress(gig.id)}
                 />
               );
@@ -357,65 +451,74 @@ const ProfileDetailsScreen = ({ route }) => {
               </Text>
             </TouchableOpacity>
           </View>
+          <ProviderPackagesList providerId={providerId} />
+
          
           <View style={{ width: "100%", padding: 20 }}>
            
             {renderUpcomingGigsList()}
             {isBookingModalVisible && (
-              <Modal
-                animationType="slide"
-                transparent={true}
-                visible={isBookingModalVisible}
-              >
-                <View style={styles.centeredView}>
-                  <View style={styles.modalView}>
-                    <View style={styles.checkboxContainer}>
-                      <Checkbox.Android
-                        status={addToCalendar ? "checked" : "unchecked"}
-                        onPress={() => setAddToCalendar(!addToCalendar)}
-                      />
-                      <Text style={styles.checkboxLabel}>Add to calendar</Text>
-                    </View>
-                    <Text style={styles.modalHeader}>Confirm your booking</Text>
-                    <Text style={styles.modalText}>
-                      Choose how many places you book{" "}
-                    </Text>
+             <Modal
+             animationType="slide"
+             transparent={true}
+             visible={isBookingModalVisible}
+           >
+             <View style={styles.centeredView}>
+               <View style={styles.modalView}>
+                 <View style={styles.checkboxContainer}>
+                   <Checkbox.Android
+                     status={addToCalendar ? "checked" : "unchecked"}
+                     onPress={() => setAddToCalendar(!addToCalendar)}
+                   />
+                   <Text style={styles.checkboxLabel}>Add to calendar</Text>
+                 </View>
+                 <Text style={styles.checkboxLabel}>This will use 1 booking from your package "{currentPackageName}" </Text>
 
-                    <Picker
-                      selectedValue={selectedSlots}
-                      style={styles.pickerStyle}
-                      onValueChange={(itemValue, itemIndex) =>
-                        setSelectedSlots(itemValue)
-                      }
-                    >
-                      {[...Array(maxSlots).keys()].map((n) => (
-                        <Picker.Item
-                          key={n + 1}
-                          label={`${n + 1}`}
-                          value={n + 1}
-                        />
-                      ))}
-                    </Picker>
-
-                    <TouchableOpacity
-                      onPress={confirmBookingAndAddToCalendar}
-                      style={styles.confirmButton}
-                    >
-                      <Text style={styles.confirmButtonText}>
-                        Confirm <Icon name="check" size={20} color="white" />
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => setBookingModalVisible(false)}
-                      style={styles.cancelButton}
-                    >
-                      <Text style={styles.cancelButtonText}>
-                        Cancel <Icon name="close" size={20} color="white" />
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </Modal>
+                 <Text style={styles.modalHeader}>Confirm your booking</Text>
+                 
+                 {!isSubscribedToProvider && (
+                   <>
+                     <Text style={styles.modalText}>
+                       Choose how many places you book{" "}
+                     </Text>
+           
+                     <Picker
+                       selectedValue={selectedSlots}
+                       style={styles.pickerStyle}
+                       onValueChange={(itemValue, itemIndex) =>
+                         setSelectedSlots(itemValue)
+                       }
+                     >
+                       {[...Array(maxSlots).keys()].map((n) => (
+                         <Picker.Item
+                           key={n + 1}
+                           label={`${n + 1}`}
+                           value={n + 1}
+                         />
+                       ))}
+                     </Picker>
+                   </>
+                 )}
+           
+                 <TouchableOpacity
+                   onPress={confirmBookingAndAddToCalendar}
+                   style={styles.confirmButton}
+                 >
+                   <Text style={styles.confirmButtonText}>
+                     Confirm <Icon name="check" size={20} color="white" />
+                   </Text>
+                 </TouchableOpacity>
+                 <TouchableOpacity
+                   onPress={() => setBookingModalVisible(false)}
+                   style={styles.cancelButton}
+                 >
+                   <Text style={styles.cancelButtonText}>
+                     Cancel <Icon name="close" size={20} color="white" />
+                   </Text>
+                 </TouchableOpacity>
+               </View>
+             </View>
+           </Modal>
             )}
           </View>
         </View>

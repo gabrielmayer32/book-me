@@ -22,9 +22,10 @@ class UserSerializer(serializers.ModelSerializer):
 # Define a serializer for the GigInstance model
 class GigInstanceSerializer(serializers.ModelSerializer):
     gig_title = serializers.ReadOnlyField(source='gig.title')
+    package_unapplicable = serializers.ReadOnlyField(source='gig.package_unapplicable')
     class Meta:
         model = GigInstance
-        fields = ['id', 'date', 'start_time', 'end_time', 'max_people', 'address', 'gig_title']  # Add other fields you need
+        fields = ['id', 'date', 'start_time', 'end_time', 'max_people', 'address', 'gig_title', 'package_unapplicable']  # Add other fields you need
 
 # Update the MainBookingSerializer to include user information and gig instance details
 class MainBookingSerializer(serializers.ModelSerializer):

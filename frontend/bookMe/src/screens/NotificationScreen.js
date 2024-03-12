@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Animated, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, Animated, ActivityIndicator,TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BACKEND_URL } from '../../utils/constants/';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -181,8 +181,11 @@ const NotificationScreen = () => {
   const [notifications, setNotifications] = useState([]);
   const { resetNotificationCount } = useUser(); // Destructure resetNotificationCount from context
   const isFocused = useIsFocused();
+  const [isLoading, setIsLoading] = useState(false);
+
 
   const fetchNotifications = async () => {
+    setIsLoading(true);
     const token = await AsyncStorage.getItem('userToken');
     const response = await fetch(`${BACKEND_URL}/accounts/notifications/`, {
       method: 'GET',
@@ -193,7 +196,9 @@ const NotificationScreen = () => {
     });
 
     if (response.ok) {
+      
       const data = await response.json();
+      setIsLoading(false);
       const updatedNotifications = data.map(notification => ({
         ...notification,
         timeAgo: moment(notification.timestamp).fromNow()
@@ -277,7 +282,12 @@ useFocusEffect(
 
 return (
   <View style={styles.container}>
-     {notifications.length > 0 ? (
+    {isLoading ? (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#424874" />
+        <Text style={styles.loadingNotification}>Loading notifications...</Text>
+      </View>
+    ) : notifications.length > 0 ? (
       <FlatList
         data={notifications}
         keyExtractor={item => item.id.toString()}
@@ -295,12 +305,24 @@ return (
       </View>
     )}
   </View>
-  );
+);
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    // Optional: Add background color or other styling if needed
+    backgroundColor: 'rgba(0,0,0,0.1)', // Light overlay background
+  },
+  loadingNotification : {
+    fontSize: 16,
+    marginTop: 10,
+    fontWeight: 'bold',
   },
   centeredMessage: {
     alignItems: 'center', // Center the icon and text horizontally

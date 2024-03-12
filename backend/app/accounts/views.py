@@ -3,6 +3,8 @@ from django.http import JsonResponse
 from django.core.serializers import serialize
 from django.conf import settings
 import os
+
+from app.utils import send_push_notification
 from .models import Subscription, CustomUser
 
 from django.http import JsonResponse
@@ -20,7 +22,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Activity
-from .serializers import ActivitySerializer, CustomLoginUserSerializer, CustomUserSerializer
+from .serializers import ActivitySerializer, CustomLoginUserSerializer, CustomUserSerializer, PackageSubscriptionSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from .models import Notification
@@ -278,6 +280,7 @@ from django.conf import settings
 
 @csrf_exempt
 def google_login(request):
+    print(request.body)
     # This view expects a POST request with 'idToken' in the body
     if request.method == "POST":
         data = json.loads(request.body)
@@ -285,15 +288,16 @@ def google_login(request):
         # Extract the idToken from the parsed data
         token = data.get('idToken')
         try:
+            print('ok')
             # Specify the GOOGLE_CLIENT_ID here
             idinfo = id_token.verify_oauth2_token(token, requests.Request(), settings.GOOGLE_CLIENT_ID)
-            print(token)
+            print(idinfo)
             # ID token is valid. Get or create the user.
             userid = idinfo['sub']
             email = idinfo.get('email')
             first_name = idinfo.get('given_name', "")
             last_name = idinfo.get('family_name', "")
-            
+            print(email)
             user, created = User.objects.get_or_create(username=email, defaults={'first_name': first_name, 'last_name': last_name, 'email': email})
             
             if created:
@@ -313,9 +317,309 @@ def google_login(request):
                 "isProvider": user.is_provider,
                 "profilePicture": request.build_absolute_uri(user.profile_picture.url) if user.profile_picture else None,
             }
-            csrf_token = get_token(request)  # Get or create the CSRF token
+            csrf_token = get_token(request)
+            print(csrf_token)
             return JsonResponse({"success": True, "user": user_info, "csrfToken": csrf_token}, status=200)
         
         except ValueError:
             # Invalid token
             return JsonResponse({"success": False, "error": "Invalid token"})
+
+
+# views.py
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import Package
+from .serializers import PackageSerializer
+
+@api_view(['POST'])
+def create_package(request):
+    if request.method == 'POST':
+        print(request.data)
+        serializer = PackageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(owner=request.user)  # Assuming the owner is the current user
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+@api_view(['PUT'])
+def update_package(request, package_id):
+
+    try:
+        package = Package.objects.get(id=package_id, owner=request.user)
+    except Package.DoesNotExist:
+        return Response({'error': 'Package not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = PackageSerializer(package, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+def delete_package(request, package_id):
+    print(package_id)
+    try:
+        package = Package.objects.get(id=package_id, owner=request.user)
+        package.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except Package.DoesNotExist:
+        return Response({'error': 'Package not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+def unsubscribe_user(request, subscription_id, user_id):
+    user = get_object_or_404(User, id=user_id)
+    subscription = get_object_or_404(PackageSubscription,  package__owner=request.user, user=user)
+    print(subscription.user)
+    # Here you might set it to 'unsubscribed' or delete the subscription
+    # For this example, let's just delete the subscription
+    subscription.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+from rest_framework import generics
+
+class PackageList(generics.ListAPIView):
+    queryset = Package.objects.all()
+    serializer_class = PackageSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        print(queryset)  # Or use logging
+        return queryset
+    
+class ProviderPackagesList(generics.ListAPIView):
+    serializer_class = PackageSerializer
+
+    def get_queryset(self):
+        """
+        This view should return a list of all the packages
+        for the provider as determined by the providerId portion of the URL.
+        """
+        provider_id = self.kwargs['providerId']
+        return Package.objects.filter(owner__id=provider_id)
+    
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from .models import PaymentInformation
+
+@api_view(['GET'])
+def get_payment_info(request, provider_id):
+    try:
+        # Use provider_id to filter PaymentInformation
+        payment_info = PaymentInformation.objects.get(provider__id=provider_id)  # Adjusted from user to provider
+        # Serialize your payment information here
+        data = {
+            "accepts_cash": payment_info.accepts_cash,
+            "mcb_juice_number": payment_info.mcb_juice_number if payment_info.mcb_juice_enabled else None,
+            "internet_banking_details": payment_info.internet_banking_details if payment_info.internet_banking_enabled else None,
+            "accepts_card": payment_info.accepts_card,
+        }
+        return JsonResponse(data)
+    except PaymentInformation.DoesNotExist:
+        return JsonResponse({"error": "Payment information not found."}, status=404)
+
+from django.http import JsonResponse
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from .models import Package, PackageSubscription
+
+from django.db import transaction
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_subscription(request, package_id):
+    try:
+        package = Package.objects.get(id=package_id)
+
+        with transaction.atomic():
+            # Check if the user already has a subscription to this package
+            if PackageSubscription.objects.filter(user=request.user, package=package).exists():
+                return JsonResponse({'error': 'You have already subscribed to this package.'}, status=400)
+
+            # Create a new subscription with 'pending' status
+            subscription = PackageSubscription.objects.create(
+                user=request.user,
+                package=package,
+                status='pending'
+            )
+
+            # Create a notification for the package provider
+            notification = Notification.objects.create(
+                recipient=package.owner,
+                actor=request.user.username,  # Assuming username is a meaningful identifier
+                verb=f'subscribed to your package "{package.name}"',
+                description=f'Your package "{package.name}" has been subscribed to.',
+                action_object_url=f'/packages/{package_id}/'  # Adjust as needed
+            )
+
+            # Optionally, send push notification to the provider
+            provider_tokens = ExpoPushToken.objects.filter(user=package.owner)
+            for token in provider_tokens:
+                send_push_notification(
+                    token.token,
+                    'New Package Subscription',
+                    f'Your package "{package.name}" has been subscribed to.', {"targetScreen": "PackageDetail", "id": str(package.id)}
+                )
+
+            # Serialize the package data
+            package_data = PackageSerializer(package).data
+
+            return JsonResponse({
+                'message': 'Subscription created successfully.',
+                'subscription_id': subscription.id,
+                'package': package_data  # Include package details in the response
+            })
+
+    except Package.DoesNotExist:
+        return JsonResponse({'error': 'Package not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+class PackageSubscriptionRequestsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        # Filter subscriptions by the current user's packages and status 'pending'
+        subscriptions = PackageSubscription.objects.filter(
+            package__owner=request.user,
+            status='pending'
+        )
+        serializer = PackageSubscriptionSerializer(subscriptions, many=True)
+        return Response(serializer.data)
+
+
+class AcceptPackageSubscriptionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, subscription_id):
+        with transaction.atomic():
+            subscription = get_object_or_404(PackageSubscription, id=subscription_id, package__owner=request.user)
+            subscription.status = 'confirmed'
+            subscription.save()
+
+            notification = Notification.objects.create(
+                recipient=subscription.user,
+                provider=request.user,
+                actor=request.user.business_name,  # or `request.user.get_full_name()` depending on your preference
+                verb='accepted your booking',
+                description=f'Your package ordering, "{subscription.package.name}",  has been accepted.',
+                # action_object_url=f'/gig/{subscription.gig_instance.id}/'  # Adjust URL as necessary for your frontend
+            )
+
+            # Sending push notification
+            provider_tokens = ExpoPushToken.objects.filter(user=subscription.user)
+            for token in provider_tokens:
+                send_push_notification(
+                    token.token,
+                    'Package Booking Accepted',
+                    f'{request.user.username} has accepted your booking package for "{subscription.package.name}".', {"targetScreen": "GigDetail"}
+                )
+            # Create and send notifications similarly as in AcceptBookingView
+
+        return Response({"message": "Package subscription accepted."}, status=status.HTTP_200_OK)
+    
+class DeclinePackageSubscriptionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, subscription_id):
+        with transaction.atomic():
+            subscription = get_object_or_404(PackageSubscription, id=subscription_id, package__owner=request.user)
+            subscription.status = 'declined'
+            subscription.save()
+
+            notification = Notification.objects.create(
+                recipient=subscription.user,
+                provider=request.user,
+                actor=request.user.business_name,  # or `request.user.get_full_name()` depending on your preference
+                verb='declined your booking',
+                description=f'Your package ordering, "{subscription.package.name}",  has been declined.',
+                # action_object_url=f'/gig/{subscription.gig_instance.id}/'  # Adjust URL as necessary for your frontend
+            )
+
+            # Sending push notification
+            provider_tokens = ExpoPushToken.objects.filter(user=subscription.user)
+            for token in provider_tokens:
+                send_push_notification(
+                    token.token,
+                    'Package Booking Declined',
+                    f'{request.user.username} has declined your booking package for "{subscription.package.name}".', {"targetScreen": "GigDetail"}
+                )
+
+        return Response({"message": "Package subscription declined."}, status=status.HTTP_200_OK)
+
+
+from django.http import JsonResponse
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def check_subscription(request):
+    user = request.user
+
+    # Try to get the subscription for the user
+    subscription = PackageSubscription.objects.filter(user=user).first()
+
+    if subscription:
+        # Serialize the package data associated with the subscription
+        package_data = serialize('json', [subscription.package], fields=('name', 'description', 'duration', 'number_of_bookings', 'price'))
+        package_data = json.loads(package_data)[0]  # Serialize returns a list, get the first item
+        print(package_data['fields'])
+        return JsonResponse({
+            'isSubscribed': True,
+            'subscription': {
+                'start_date': subscription.start_date,
+                'status': subscription.status,
+                'package': package_data['fields']  # Only include fields from package data
+            }
+        })
+
+    return JsonResponse({'isSubscribed': False})
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from .models import PackageSubscription
+from .serializers import PackageSubscriptionSerializer
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def pending_package_subscriptions(request):
+    print(request.user)
+    pending_subscriptions = PackageSubscription.objects.filter(package__owner=request.user, status='pending')
+    serializer = PackageSubscriptionSerializer(pending_subscriptions, many=True)
+    return Response(serializer.data)
+
+
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from .models import PackageSubscription
+from .serializers import PackageSubscriptionSerializer
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
+class UserPackageSubscriptionsView(APIView):
+    def get(self, request, user_id, format=None):
+        print("User ID:", user_id)  # Debug print
+
+        # Fetching subscriptions for the logged-in user
+        subscriptions = PackageSubscription.objects.filter(user=user_id).select_related('package', 'package__owner')
+
+        print("Subscriptions QuerySet:", subscriptions)  # Debug print to see if queryset is empty or contains data
+
+        serializer = PackageSubscriptionSerializer(subscriptions, many=True)
+        
+        print("Serialized data:", serializer.data)  # Debug print to check serialization output
+        
+        return Response(serializer.data)
+
+

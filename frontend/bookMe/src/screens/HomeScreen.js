@@ -12,27 +12,40 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {BACKEND_URL} from '../../utils/constants/';
 import CachedImage from 'expo-cached-image';
 import Theme from '../theme/theme';
-
+import { useSubscription } from '../SubscriptionContext';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const { data, isLoading, error } = useFetch(`${BACKEND_URL}/accounts/providers/`);
   const [weather, setWeather] = useState({ temp: null, icon: null });
   const [activities, setActivities] = useState([]); // State for activities
+  const { checkSubscriptionsStatus } = useSubscription();
+  const { setUserInfo, fetchNotificationsCount } = useUser();
 
   useEffect(() => {
     const fetchActivities = async () => {
       try {
         const response = await axios.get(`${BACKEND_URL}/accounts/activities/`); // Adjust URL as needed
-        console.log(response.data);
         setActivities(response.data); // Assuming the response structure
       } catch (error) {
         console.error('Error fetching activities:', error);
       }
     };
 
+  
+
+
     fetchActivities();
+    // fetchNotificationsCount(); // Fetch notifications count
   }, []);
+
+  useEffect(() => {
+    checkSubscriptionsStatus();
+    fetchNotificationsCount();
+    console.log('li eme');
+    // Any other actions to run once on component mount
+  }, []); // Empty dependency array means this effect runs only on mount and unmount
+  
 
   // Existing code for weather and other functionalities...
   const baseURL = `${BACKEND_URL}`;

@@ -35,7 +35,6 @@ const getStatusColor = ({ status }) => {
     const statusColor = getStatusColor(item.status); // Define getStatusColor accordingly
     const moreIconRef = React.useRef(null);
     const toggleMenuVisibility = () => setMenuVisible(!menuVisible);
-    console.log(item);
     return (
         <View style={styles.bookingItem}>
             <View style={styles.header}>

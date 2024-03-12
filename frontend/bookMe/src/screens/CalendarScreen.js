@@ -19,6 +19,7 @@ import MapView, { Marker } from "react-native-maps"; // Ensure MapView and Marke
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Checkbox } from 'react-native-paper';
 import {BACKEND_URL} from '../../utils/constants/';
+import RecurringGigModal from '../components/RecurringGigModal';
 
 const daysOfWeek = [
   "Sunday",
@@ -48,11 +49,13 @@ const CalendarScreen = ({ navigation, userInfo,route  }) => {
 
   const [location, setLocation] = useState(null);
   const [isMapVisible, setIsMapVisible] = useState(false);
+  const [isRecurringModalVisible, setIsRecurringModalVisible] = useState(false);
+
   const locationData = location
     ? { latitude: location.latitude, longitude: location.longitude }
     : {};
     const [isTemplate, setIsTemplate] = useState(false); // New state for the checkbox
-
+    const [isPackageUnapplicable, setIsPackageUnapplicable] = useState(false);
 
     useEffect(() => {
       if (templateData) {
@@ -63,7 +66,19 @@ const CalendarScreen = ({ navigation, userInfo,route  }) => {
       }
     }, [templateData]);
   
-
+    const handleCreateGigPress = () => {
+      if (isRecurring) {
+        setIsRecurringModalVisible(true);
+      } else {
+        createGig();
+      }
+    };
+    
+    // Handling modal submission
+    const handleModalSubmit = (months, weeks) => {
+      setIsRecurringModalVisible(false); // Close the modal
+      createGig(months, weeks); // Directly create the gig with duration
+    };
 
   const renderMapView = () => {
     return (
@@ -129,21 +144,14 @@ const CalendarScreen = ({ navigation, userInfo,route  }) => {
     )
     .filter((id) => id !== null);
     
-  const createGig = async () => {
-    try {
-      const formattedDate = date.toISOString().split("T")[0];
-      const formattedStartTime = startTime
-        .toISOString()
-        .split("T")[1]
-        .substring(0, 5);
-      const formattedEndTime = endTime
-        .toISOString()
-        .split("T")[1]
-        .substring(0, 5);
-      const csrfToken = await AsyncStorage.getItem("csrfToken");
-      const response = await axios.post(
-        `${BACKEND_URL}/gig/create/`,
-        {
+    const createGig = async (durationMonths, durationWeeks) => {
+      try {
+        const formattedDate = date.toISOString().split("T")[0];
+        const formattedStartTime = startTime.toISOString().split("T")[1].substring(0, 5);
+        const formattedEndTime = endTime.toISOString().split("T")[1].substring(0, 5);
+        const csrfToken = await AsyncStorage.getItem("csrfToken");
+    
+        const gigData = {
           title,
           description,
           price,
@@ -153,16 +161,26 @@ const CalendarScreen = ({ navigation, userInfo,route  }) => {
           end_time: formattedEndTime,
           is_recurring: isRecurring,
           recurring_days: selectedDayIds,
-          is_template: isTemplate, 
-          ...locationData, 
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": csrfToken, // Include CSRF token in the request header
-          },
-        },
-      );
+          is_template: isTemplate,
+          package_unapplicable: isPackageUnapplicable,
+          ...locationData,
+          // Conditionally include the duration fields
+          ...(isRecurring && {
+            duration_months: parseInt(durationMonths, 10),
+            duration_weeks: parseInt(durationWeeks, 10),
+          }),
+        };
+    
+        const response = await axios.post(
+          `${BACKEND_URL}/gig/create/`,
+          gigData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken, // Include CSRF token in the request header
+            },
+          }
+        );
           
       if (response.status === 201) {
         console.log("Gig created successfully:", response.data);
@@ -366,7 +384,21 @@ const CalendarScreen = ({ navigation, userInfo,route  }) => {
     style={styles.dateTimePicker}
   />
         </View>
-        {!templateData?.is_template && (
+       
+        <TouchableOpacity style={styles.buttonPin} onPress={() => setIsMapVisible(true)}>
+        <Icon name="pin" size={20} color="#fff" />
+
+          <Text style={styles.buttonText}>Choose Location</Text>
+        </TouchableOpacity>
+        <View style={styles.checkboxContainer}>
+  <Text style={styles.templateText}>Package Not Applicable</Text>
+  <Checkbox.Android
+    status={isPackageUnapplicable ? 'checked' : 'unchecked'}
+    onPress={() => setIsPackageUnapplicable(!isPackageUnapplicable)}
+    color={isPackageUnapplicable ? '#6200ee' : undefined} // Or any color you prefer
+  />
+</View>
+{!templateData?.is_template && (
         <View style={styles.checkboxContainer}>
         
         <Text style={styles.templateText}>Save as template ? </Text>
@@ -378,16 +410,18 @@ const CalendarScreen = ({ navigation, userInfo,route  }) => {
           />
           </View>
         )}
-        <TouchableOpacity style={styles.buttonPin} onPress={() => setIsMapVisible(true)}>
-        <Icon name="pin" size={20} color="#fff" />
-
-          <Text style={styles.buttonText}>Choose Location</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.button} onPress={createGig}>
-          <Icon name="plus" size={20} color="#fff" />
-          <Text style={styles.buttonText}>Create Gig</Text>
-        </TouchableOpacity>
+       <>
+  <TouchableOpacity style={styles.button} onPress={handleCreateGigPress}>
+    <Icon name="plus" size={20} color="#fff" />
+    <Text style={styles.buttonText}>Create Gig</Text>
+  </TouchableOpacity>
+  
+  <RecurringGigModal
+    isVisible={isRecurringModalVisible}
+    onClose={() => setIsRecurringModalVisible(false)}
+    onSubmit={handleModalSubmit}
+  />
+</>
       </ScrollView>
       {renderMapView()}
     </ScreenLayout>
@@ -508,6 +542,9 @@ const styles = StyleSheet.create({
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 15,
+    },
+    checkboxLabel: {
+      marginLeft: 8,
     },
     toggleButton: {
       borderWidth: 1,

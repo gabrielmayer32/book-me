@@ -17,6 +17,8 @@ import ProviderNotificationScreen from '../screens/ProviderNotificationScreen';
 import { LinkingOptions } from '@react-navigation/native';
 import TemplateGigListScreen from '../screens/TemplateGigListScreen';
 import SignupScreen from '../screens/SignupScreen';
+import ProviderPackages from '../screens/ProviderPackagesScreen';
+import CreatePackage from '../screens/CreatePackagesScreen';
 
 const Stack = createStackNavigator();
 
@@ -45,6 +47,8 @@ function AppNavigator() {
         <Stack.Screen name="ProfileDetails" component={ProfileDetailScreen} />
         <Stack.Screen name="ProviderDashboard" component={ProviderDashboard} />
         <Stack.Screen name="ProviderGigs" component={ProviderGigScreen} />
+        <Stack.Screen name="ProviderPackages" component={ProviderPackages} />
+        <Stack.Screen name="CreatePackages" component={CreatePackage} />
         <Stack.Screen name="Calendar" component={CalendarScreen} />
         <Stack.Screen name="ActivityCollaborators" component={ActivityCollaborators} />
         <Stack.Screen name="TemplatesScreen" component={TemplateGigListScreen} />
