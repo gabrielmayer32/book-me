@@ -20,6 +20,10 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Checkbox } from 'react-native-paper';
 import {BACKEND_URL} from '../../utils/constants/';
 import RecurringGigModal from '../components/RecurringGigModal';
+import { useTheme } from 'react-native-paper';
+
+
+
 
 const daysOfWeek = [
   "Sunday",
@@ -32,6 +36,8 @@ const daysOfWeek = [
 ];
 
 const CalendarScreen = ({ navigation, userInfo,route  }) => {
+
+    const { colors } = useTheme(); // Accessing the theme
 
   const templateData = route.params?.templateData;
 
@@ -50,7 +56,224 @@ const CalendarScreen = ({ navigation, userInfo,route  }) => {
   const [location, setLocation] = useState(null);
   const [isMapVisible, setIsMapVisible] = useState(false);
   const [isRecurringModalVisible, setIsRecurringModalVisible] = useState(false);
+  
+  const [isStartTimePickerVisible, setStartTimePickerVisibility] = useState(false);
+const [isEndTimePickerVisible, setEndTimePickerVisibility] = useState(false);
 
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 20,
+  },
+  input: {
+    height: 40,
+    marginBottom: 10,
+    borderWidth: 1,
+    padding: 10,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  datePickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  dateLabel: {
+    marginRight: 10,
+    fontWeight: 'bold',
+  },
+  dateDisplay: {
+    backgroundColor: '#f0f0f0',
+    padding: 10,
+    borderRadius: 5,
+  },
+  buttonTime: {
+    color: 'black',
+    fontStyle: 'normal',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center', // This centers the text horizontally
+    justifyContent: 'center', // This centers it vertically
+    borderWidth: 1,
+  },
+  buttonTextTime: {
+    color: 'black',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  dateText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    backgroundColor: '#f0f0f0',
+    padding: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+  },
+  datePickerContainer: {
+    marginLeft: 10,
+    flexDirection: 'row', // Align items in a row
+    alignItems: 'center', // Vertically center items
+    marginBottom: 15,
+    marginTop: 10,
+  },
+
+  dateLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#000', // Adjust color based on your theme
+    marginRight: 10, // Adds some space between the label and the button
+  },
+  datePickerButton: {
+    flexDirection: 'row', // Align button text and icon in a row
+    alignItems: 'center',
+    backgroundColor: '#E8E8E8', // A light background color for the button
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
+  },
+  datePickerText: {
+    marginRight: 5, // Space between the date text and the icon
+    color: '#4F8EF7', // Button text color
+  },
+  inputLabelTime : {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#000', // Adjust color based on your theme
+    marginBottom: 4, // Space between label and input field
+
+  },
+
+
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#000', // Adjust color based on your theme
+    marginBottom: 4, // Space between label and input field
+    marginLeft: 10, // Align with the input text
+  },
+  inputShort: {
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 10,
+    width: '50%',
+    borderRadius: 5,
+  },
+  input: {
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 10,
+    borderRadius: 5,
+  },
+  multilineInput: {
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  templateText : {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginTop: 10,
+    marginLeft: 15,
+    marginBottom: 10,
+},
+  timeLabel : {
+      fontSize: 14,
+      fontWeight: 'bold',
+      marginTop: 28,
+  },
+  button: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      padding: 10,
+      borderRadius: 5,
+      justifyContent: 'center',
+      margin: 10,
+    },
+  // button: {
+  //   backgroundColor: '#007bff',
+  //   padding: 15,
+  //   borderRadius: 5,
+  //   flexDirection: 'row',
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   marginBottom: 15,
+  // },
+  buttonPin: {
+      marginLeft: '15%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.button,
+      padding: 10,
+      borderRadius: 5,
+      justifyContent: 'center',
+      margin: 10,
+      marginBottom: 15,
+      width: '70%',
+    },
+
+
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  checkboxLabel: {
+    marginLeft: 8,
+  },
+  toggleButton: {
+    borderWidth: 1,
+    borderColor: 'black',
+    borderRadius: 5,
+    padding: 10,
+    marginLeft: 10,
+  },
+  toggleButtonActive: {
+    color: colors.button,
+    marginLeft: 10,
+  },
+  toggleButtonText: {
+    color: 'black',
+  },
+  daysContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 15,
+  },
+  dayButton: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 5,
+    padding: 10,
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  dayButtonSelected: {
+    backgroundColor: colors.primary,
+  },
+  dayButtonText: {
+    color: '#000',
+  },
+
+  timePickerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  dateTimePicker: {
+    flex: 1,
+  },
+});
   const locationData = location
     ? { latitude: location.latitude, longitude: location.longitude }
     : {};
@@ -66,11 +289,21 @@ const CalendarScreen = ({ navigation, userInfo,route  }) => {
       }
     }, [templateData]);
   
-    const handleCreateGigPress = () => {
+    const handleCreateGigPress = async () => {
+      // Basic validation to check all fields are filled
+      if (!title || !description || !price || !maxPeople || 
+          !date || (!isRecurring && (!startTime || !endTime)) || 
+          (isRecurring && selectedDays.every(day => !day))) {
+        alert("Please fill in all fields.");
+        return;
+      }
+    
+      // Further validation can go here (e.g., price and maxPeople should be positive numbers)
+    
       if (isRecurring) {
         setIsRecurringModalVisible(true);
       } else {
-        createGig();
+        await createGig();
       }
     };
     
@@ -202,85 +435,139 @@ const CalendarScreen = ({ navigation, userInfo,route  }) => {
     setSelectedDays(updatedSelectedDays);
   };
 
+  
+
+  
   const EndTimePicker = ({ endTime, setEndTime }) => {
     const [isPickerVisible, setPickerVisibility] = useState(false);
-
+  
     const showPicker = () => {
       setPickerVisibility(true);
     };
-
+  
     const hidePicker = () => {
       setPickerVisibility(false);
     };
-
+  
     const handleConfirm = (date) => {
-      console.log("An end time has been picked: ", date);
-      setEndTime(date); // Update the end time state
+      console.log("A start time has been picked: ", date);
+      setEndTime(date);
       hidePicker();
     };
-
+  
+    // Function to format the date to hh:mm
+    const formatTime = (date) => {
+      let hours = date.getHours();
+      let minutes = date.getMinutes();
+      hours = hours < 10 ? '0' + hours : hours;
+      minutes = minutes < 10 ? '0' + minutes : minutes;
+      return `${hours}:${minutes}`;
+    };
+  
     return (
-      
-      <View>
-        <Button title="Show End Time Picker" onPress={showPicker} />
-        <DateTimePickerModal
-  isVisible={isPickerVisible}
-  mode="time"
-  onConfirm={(date) => {
-    console.log("A date or time has been picked: ", date);
-    // Set the state or perform an action with the selected date/time
-    hidePicker(); // Assuming this sets `isPickerVisible` to false
-  }}
-  onCancel={hidePicker} // Assuming this sets `isPickerVisible` to false
-  // Other necessary props
-/>
-      </View>
-    );
-  };
-
-  const NonRecurringDatePicker = () => (
-    !isRecurring && (
-      <DateTimePickerModal
-        testID="dateTimePickerDate"
-        value={date}
-        mode="date"
-        display="default"
-        onChange={(event, selectedDate) => {
-          setDate(selectedDate || date);
-        }}
-      />
-    )
-  );
-
-  const StartTimePicker = () => {
-    const [isPickerVisible, setPickerVisibility] = useState(false);
-
-    const showPicker = () => {
-      setPickerVisibility(true);
-    };
-
-    const hidePicker = () => {
-      setPickerVisibility(false);
-    };
-
-    const handleConfirm = (date) => {
-      console.log("A date has been picked: ", date);
-      setStartTime(date); // Assuming you have a setStartTime function available
-      hidePicker();
-    };
-
-    return (
-      <View>
-        <Button title="Show Start Time Picker" onPress={showPicker} />
+      <View style={styles.container}>
+        <TouchableOpacity onPress={showPicker} style={styles.buttonTime}>
+          <Text style={styles.buttonTextTime}>{formatTime(endTime)}</Text>
+        </TouchableOpacity>
         <DateTimePickerModal
           isVisible={isPickerVisible}
           mode="time"
           onConfirm={handleConfirm}
           onCancel={hidePicker}
+          date={endTime}
         />
       </View>
     );
   };
+  
+
+
+  const StartTimePicker = ({ startTime, setStartTime }) => {
+    const [isPickerVisible, setPickerVisibility] = useState(false);
+  
+    const showPicker = () => {
+      setPickerVisibility(true);
+    };
+  
+    const hidePicker = () => {
+      setPickerVisibility(false);
+    };
+  
+    const handleConfirm = (date) => {
+      console.log("A start time has been picked: ", date);
+      setStartTime(date);
+      hidePicker();
+    };
+  
+    // Function to format the date to hh:mm
+    const formatTime = (date) => {
+      let hours = date.getHours();
+      let minutes = date.getMinutes();
+      hours = hours < 10 ? '0' + hours : hours;
+      minutes = minutes < 10 ? '0' + minutes : minutes;
+      return `${hours}:${minutes}`;
+    };
+  
+    return (
+      <View style={styles.container}>
+        <TouchableOpacity onPress={showPicker} style={styles.buttonTime}>
+          <Text style={styles.buttonTextTime}>{formatTime(startTime)}</Text>
+        </TouchableOpacity>
+        <DateTimePickerModal
+          isVisible={isPickerVisible}
+          mode="time"
+          onConfirm={handleConfirm}
+          onCancel={hidePicker}
+          date={startTime}
+        />
+      </View>
+    );
+  };
+  
+
+
+  const NonRecurringDatePicker = ({ date, setDate }) => {
+    const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  
+    const showDatePicker = () => {
+      setDatePickerVisibility(true);
+    };
+  
+    const hideDatePicker = () => {
+      setDatePickerVisibility(false);
+    };
+  
+    const handleConfirm = (selectedDate) => {
+      setDate(selectedDate);
+      hideDatePicker();
+    };
+    
+    const formatDate = (date) => {
+      const day = `0${date.getDate()}`.slice(-2); // Ensures two digits
+      const month = `0${date.getMonth() + 1}`.slice(-2); // Month is 0-indexed, add 1
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    };
+    // Format the displayed date for readability
+    
+  
+    return (
+      <View style={styles.datePickerContainer}>
+        <Text style={styles.dateLabel}>Date</Text>
+        <TouchableOpacity onPress={showDatePicker} style={styles.dateDisplay}>
+          <Text style={styles.dateText}>{formatDate(date)}</Text>
+        </TouchableOpacity>
+        <DateTimePickerModal
+          isVisible={isDatePickerVisible}
+          mode="date"
+          onConfirm={handleConfirm}
+          onCancel={hideDatePicker}
+          date={date}
+        />
+      </View>
+    );
+  };
+
 
   return (
     <>
@@ -318,7 +605,7 @@ const CalendarScreen = ({ navigation, userInfo,route  }) => {
       value={price} 
       onChangeText={setPrice} 
       keyboardType="numeric" 
-      style={styles.input} 
+      style={styles.inputShort} 
     />
 
     {/* Max People Input */}
@@ -328,11 +615,11 @@ const CalendarScreen = ({ navigation, userInfo,route  }) => {
       value={maxPeople} 
       onChangeText={setMaxPeople} 
       keyboardType="numeric" 
-      style={styles.input} 
+      style={styles.inputShort} 
     />
 
         <View style={styles.toggleContainer}>
-          <Text style={styles.inputLabel}>Is this gig recurring?</Text>
+          <Text style={styles.inputLabelTime}>Is this gig recurring?</Text>
           <TouchableOpacity style={[styles.toggleButton, isRecurring ? styles.toggleButtonActive : {}]} onPress={() => setIsRecurring(!isRecurring)}>
             <Text style={styles.toggleButtonText}>{isRecurring ? "Yes" : "No"}</Text>
           </TouchableOpacity>
@@ -349,40 +636,24 @@ const CalendarScreen = ({ navigation, userInfo,route  }) => {
         )}
 
         {!isRecurring && (
-          <View style={styles.datePickerContainer}>
-          <Text style={styles.dateLabel}>Date</Text>
-          
-
-            <DateTimePicker
-              value={date}
-              mode="date"
-              display="default"
-              onChange={(event, selectedDate) => setDate(selectedDate || date)}
-              style={styles.dateTimePicker}
-            />
-          </View>
+          <NonRecurringDatePicker
+          date={date}
+          setDate={setDate}
+        />
         )}
 
         <View style={styles.timePickerContainer}>
         <Text style={styles.timeLabel}>Start  Time</Text>
-        <DateTimePicker
-    value={startTime}
-    mode="time"
-    is24Hour={true}
-    display="default"
-    onChange={handleStartTimeChange}
-    style={styles.dateTimePicker}
-  />
+        <StartTimePicker
+          startTime={startTime}
+          setStartTime={setStartTime}
+        />
         <Text style={styles.timeLabel}>End  Time</Text>
 
-        <DateTimePicker
-    value={endTime}
-    mode="time"
-    is24Hour={true}
-    display="default"
-    onChange={handleEndTimeChange}
-    style={styles.dateTimePicker}
-  />
+        <EndTimePicker
+          endTime={endTime}
+          setEndTime={setEndTime}
+        />
         </View>
        
         <TouchableOpacity style={styles.buttonPin} onPress={() => setIsMapVisible(true)}>
@@ -428,164 +699,6 @@ const CalendarScreen = ({ navigation, userInfo,route  }) => {
     </>
   );
 };
-const styles = StyleSheet.create({
-    container: {
-      padding: 20,
-    },
-    input: {
-      height: 40,
-      marginBottom: 10,
-      borderWidth: 1,
-      padding: 10,
-    },
-    checkboxContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
 
-    datePickerContainer: {
-      marginLeft: 10,
-      flexDirection: 'row', // Align items in a row
-      alignItems: 'center', // Vertically center items
-      marginBottom: 15,
-      marginTop: 10,
-      justifyContent: 'space-between', // Adjust based on your design preference
-    },
-
-    dateLabel: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: '#000', // Adjust color based on your theme
-      marginRight: 10, // Adds some space between the label and the button
-    },
-    datePickerButton: {
-      flexDirection: 'row', // Align button text and icon in a row
-      alignItems: 'center',
-      backgroundColor: '#E8E8E8', // A light background color for the button
-      paddingHorizontal: 10,
-      paddingVertical: 5,
-      borderRadius: 5,
-    },
-    datePickerText: {
-      marginRight: 5, // Space between the date text and the icon
-      color: '#4F8EF7', // Button text color
-    },
-    inputLabel: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: '#000', // Adjust color based on your theme
-      marginBottom: 4, // Space between label and input field
-      marginLeft: 10, // Align with the input text
-    },
-    input: {
-      marginBottom: 15,
-      borderWidth: 1,
-      borderColor: '#ccc',
-      padding: 10,
-      borderRadius: 5,
-    },
-    multilineInput: {
-      minHeight: 100,
-      textAlignVertical: 'top',
-    },
-    templateText : {
-      fontSize: 14,
-      fontWeight: 'bold',
-      marginTop: 10,
-      marginLeft: 15,
-      marginBottom: 10,
-  },
-    timeLabel : {
-        fontSize: 14,
-        fontWeight: 'bold',
-        marginTop: 10,
-        marginLeft: 15,
-    },
-    button: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#4F8EF7',
-        padding: 10,
-        borderRadius: 20,
-        justifyContent: 'center',
-        margin: 10,
-      },
-    // button: {
-    //   backgroundColor: '#007bff',
-    //   padding: 15,
-    //   borderRadius: 5,
-    //   flexDirection: 'row',
-    //   justifyContent: 'center',
-    //   alignItems: 'center',
-    //   marginBottom: 15,
-    // },
-    buttonPin: {
-        marginLeft: '15%',
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#4F8EF7',
-        padding: 10,
-        borderRadius: 20,
-        justifyContent: 'center',
-        margin: 10,
-        marginBottom: 15,
-        width: '70%',
-      },
-
-    buttonText: {
-      color: '#fff',
-      fontWeight: 'bold',
-      marginLeft: 10,
-    },
-    toggleContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 15,
-    },
-    checkboxLabel: {
-      marginLeft: 8,
-    },
-    toggleButton: {
-      borderWidth: 1,
-      borderColor: '#007bff',
-      borderRadius: 5,
-      padding: 10,
-    },
-    toggleButtonActive: {
-      backgroundColor: '#007bff',
-    },
-    toggleButtonText: {
-      color: '#007bff',
-    },
-    daysContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      marginBottom: 15,
-    },
-    dayButton: {
-      borderWidth: 1,
-      borderColor: '#007bff',
-      borderRadius: 5,
-      padding: 10,
-      marginRight: 10,
-      marginBottom: 10,
-    },
-    dayButtonSelected: {
-      backgroundColor: '#007bff',
-    },
-    dayButtonText: {
-      color: '#000',
-    },
-
-    timePickerContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 15,
-    },
-    dateTimePicker: {
-      flex: 1,
-    },
-  });
   
   export default CalendarScreen;

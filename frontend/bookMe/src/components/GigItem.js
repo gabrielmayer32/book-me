@@ -3,9 +3,13 @@ import { View, Text, Modal, TouchableOpacity, StyleSheet,FlatList, TouchableWith
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {BACKEND_URL} from '../../utils/constants/';
+import { useTheme } from 'react-native-paper';
+
+
 
 const GigItem = ({ gig, fetchUpcomingGigs, fetchBookingRequests  }) => {
     const [menuVisible, setMenuVisible] = useState(false);
+    const { colors } = useTheme(); // Accessing the theme
     const [selectedBookingId, setSelectedBookingId] = useState(null);
 
     const renderBookingItem = ({  item }) => (
@@ -55,19 +59,19 @@ const GigItem = ({ gig, fetchUpcomingGigs, fetchBookingRequests  }) => {
             <View style={styles.gigHeader}>
                 <Text style={styles.gigTitle}>{gig.title}</Text>
                 <TouchableOpacity onPress={() => showMenu(gig.id)}>
-                    <Icon name="dots-vertical" size={24} color="#4F8EF7" />
+                    <Icon name="dots-vertical" size={24} color={colors.info} />
                 </TouchableOpacity>
             </View>
             <View style={styles.detailRow}>
-            <Icon name="pin" size={20} color="#4F8EF7" />
+            <Icon name="pin" size={20} color={colors.info} />
             <Text style={styles.detailText}>{`${gig.address}`}</Text>
           </View>
           <View style={styles.detailRow}>
-            <Icon name="calendar" size={20} color="#4F8EF7" />
+            <Icon name="calendar" size={20} color={colors.info} />
             <Text style={styles.detailText}>{gig.date}</Text>
           </View>
             <View style={styles.detailRow}>
-            <Icon name="clock-start" size={20} color="#4F8EF7" />
+            <Icon name="clock-start" size={20} color={colors.info} />
             <Text style={styles.detailText}>{`${gig.start_time} - ${gig.end_time}`}</Text>
 
           </View>
@@ -111,6 +115,15 @@ const styles = StyleSheet.create({
         shadowRadius: 2.62,
         elevation: 4,
     },
+    button: {
+        alignContent: 'center',
+        alignItems: 'center',
+          marginTop: 10,
+          backgroundColor: '#007bff',
+          paddingVertical: 10,
+          paddingHorizontal: 20,
+          borderRadius: 5,
+        },
     centeredView: {
         flex: 1,
         justifyContent: "center",

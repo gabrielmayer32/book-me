@@ -28,8 +28,9 @@ const LogoutButton = ({ navigation, color = 'black' }) => {
       });
 
       // Clear any stored user info or tokens
-
-      logoutUser(); // Clear user info from context
+      
+      logoutUser();
+      // await AsyncStorage.removeItem('credentials');
       // Reset navigation to the Login screen
       navigation.reset({
         index: 0,

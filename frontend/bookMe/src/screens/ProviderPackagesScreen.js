@@ -173,7 +173,9 @@ const ProviderPackagesScreen = () => {
       <View style={styles.packageItem}>
         <Text style={styles.packageName}>{item.name}</Text>
         
-      <Text style={styles.subscribedUsers}>Subscribed users </Text>        
+      <Text style={styles.subscribedUsers}>Users </Text> 
+      
+             
 
         {/* Subscriber avatars */}
         <View style={styles.subscribersContainer}>

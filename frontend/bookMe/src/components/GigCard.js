@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useTheme } from 'react-native-paper';
 
 const GigCard = ({ dayOfMonth, title, startTime, endTime, remainingSlots, address, onBookPress, description }) => {
-  // State to manage whether the description is expanded or not
+  const { colors } = useTheme(); // Accessing the theme
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   // Toggle function to expand/collapse the description
@@ -20,19 +21,19 @@ const GigCard = ({ dayOfMonth, title, startTime, endTime, remainingSlots, addres
           <View style={styles.gigDetails}>
               <Text style={styles.gigItemTitle}>{title}</Text>
               <TouchableOpacity style={styles.descriptionRow} onPress={toggleDescription}>
-                  <Icon name="information" size={20} color="#4F8EF7" />
-                  <Text style={styles.itemDescription} numberOfLines={isDescriptionExpanded ? 0 : 2}>{description}</Text>
+                   <Icon name="information" size={20} color={colors.info} />
+                  <Text style={styles.detailText} numberOfLines={isDescriptionExpanded ? 0 : 2}>{description}</Text>
               </TouchableOpacity>
               <View style={styles.detailRow}>
-                  <Icon name="map" size={20} color="#4F8EF7" />
+                  <Icon name="map" size={20} color={colors.info} />
                   <Text style={styles.detailText}>{address}</Text>
               </View>
               <View style={styles.detailRow}>
-                  <Icon name="clock-start" size={20} color="#4F8EF7" />
+                  <Icon name="clock-start" size={20} color={colors.info} />
                   <Text style={styles.detailText}>{startTime} - {endTime}</Text>
               </View>
               <View style={styles.detailRow}>
-                  <Icon name="account-group" size={20} color="#4F8EF7" />
+                  <Icon name="account-group" size={20} color={colors.info} />
                   <Text style={styles.detailText}>{remainingSlots} slots remaining</Text>
               </View>
           </View>
@@ -59,13 +60,14 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         position: 'relative', // Add this line
       },
+      
       bookButton: {
         position: 'absolute',
         right: 10,
-        bottom: 10,
-        backgroundColor: '#4F8EF7',
+        bottom: 15,
+        backgroundColor: '#A7658E',
         padding: 10,
-        borderRadius: 20,
+        borderRadius: 5,
       },
       bookButtonText: {
         color: 'white',

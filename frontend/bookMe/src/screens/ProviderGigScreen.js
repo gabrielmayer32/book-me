@@ -10,12 +10,15 @@ import { adjustDateTimeToUTC4, adjustTimeToUTC4 } from '../../utils/utcTime';
 import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEffect
 import {BACKEND_URL} from '../../utils/constants/';
 import axios from 'axios';
+import { useTheme } from 'react-native-paper';
+
 
 const ProviderGigsScreen = ({ navigation }) => {
   const [gigs, setGigs] = useState([]);
   const { userInfo } = useUser();
   const [templates, setTemplates] = useState([]);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const { colors } = useTheme(); // Accessing the theme
 
   const toggleDescription = () => {
 
@@ -112,45 +115,45 @@ const ProviderGigsScreen = ({ navigation }) => {
           <Text style={styles.title}>{item.title}</Text>
           <View style={styles.detailRow}>
          <TouchableOpacity style={styles.descriptionRow} onPress={toggleDescription}>
-                  <Icon name="information" size={20} color="#4F8EF7" />
+                  <Icon name="information" size={20} color={colors.info} />
                   <Text style={styles.itemDescription} numberOfLines={isDescriptionExpanded ? 0 : 2}>{item.description}</Text>
               </TouchableOpacity>
             
           </View>
           <View style={styles.detailRow}>
-            <Icon name="clock-start" size={20} color="#4F8EF7" />
+            <Icon name="clock-start" size={20} color={colors.info} />
             <Text style={styles.details}>{item.start_time}</Text>
           </View>
          
           <View style={styles.detailRow}>
-            <Icon name="clock" size={20} color="#4F8EF7" />
+            <Icon name="clock" size={20} color={colors.info} />
             <Text style={styles.details}>{`${duration} minutes`}</Text>
           </View>
           <View style={styles.detailRow}>
-            <Icon name="account-group" size={20} color="#4F8EF7" />
+            <Icon name="account-group" size={20} color={colors.info} />
             <Text style={styles.details}>{`${item.max_people}`}</Text>
           </View>
           <View style={styles.detailRow}>
-            <Icon name="currency-usd" size={20} color="#4F8EF7" />
+            <Icon name="currency-usd" size={20} color={colors.info} />
             <Text style={styles.details}>{`Rs ${item.price}`}</Text>
           </View>
           
           <View style={styles.detailRow}>
   {item.is_recurring ? (
     <>
-      <Icon name="reload" size={20} color="#4F8EF7" />
+      <Icon name="reload" size={20} color={colors.info} />
       {/* Display something meaningful for recurring events, like "Every Monday" */}
       <Text style={styles.details}>Every {recurringDaysToString(item.recurring_days)}</Text>
     </>
   ) : item.date ? (
     <>
-      <Icon name="calendar" size={20} color="#4F8EF7" />
+      <Icon name="calendar" size={20} color={colors.info} />
       <Text style={styles.details}>{moment(item.date).format('DD MMM YYYY')}</Text>
     </>
   ) : (
     // Handle cases where there's no date (for consistency, even if it shouldn't happen for non-recurring events)
     <>
-      <Icon name="calendar-question" size={20} color="#4F8EF7" />
+      <Icon name="calendar-question" size={20} color={colors.info} />
       <Text style={styles.details}>No date</Text>
     </>
   )}
@@ -159,7 +162,7 @@ const ProviderGigsScreen = ({ navigation }) => {
         </View>
 
         <TouchableOpacity onPress={() => onPress(item)} style={styles.editButton}>
-          <Icon name="arrow-right" size={24} color="#4F8EF7" />
+          <Icon name="arrow-right" size={24} color={colors.info} />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -210,18 +213,15 @@ return (
   <Icon name="file-document" size={20} color="white" />
   <Text style={styles.createButtonText}>Create Gig from Template</Text>
 </TouchableOpacity>
+<TouchableOpacity style={styles.createButton} onPress={navigateToCreateGig}>
+              <Icon name="plus" size={20} color="white" />
+              <Text style={styles.createButtonText}>Create Gig</Text>
+            </TouchableOpacity>
 
         <FlatList
           data={gigs}
           keyExtractor={(item) => item.id.toString()}
-          ListHeaderComponent={() => (
-            <TouchableOpacity style={styles.createButton} onPress={navigateToCreateGig}>
-              <Icon name="plus" size={20} color="white" />
-              <Text style={styles.createButtonText}>Create Gig</Text>
-            </TouchableOpacity>
-            
-            
-          )}
+          
           renderItem={({ item }) => renderGigItem({ item, navigation })} // Ensure navigation is passed here
           />
       </ScreenLayout>
@@ -266,9 +266,9 @@ const styles = StyleSheet.create({
   createButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4F8EF7',
+    backgroundColor: '#656CA7',
     padding: 10,
-    borderRadius: 20,
+    borderRadius: 5,
     justifyContent: 'center',
     margin: 10,
   },

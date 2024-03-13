@@ -49,8 +49,6 @@ const ProfileDetailsScreen = ({ route }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [packageUnapplicable, setPackageUnapplicable] = useState(false);
 
-  console.log('WAWAWAW');
-  console.log(route.params);
 
   const handleToggleSubscription = async () => {
     const providerId = route.params.providerId;
@@ -186,7 +184,6 @@ const ProfileDetailsScreen = ({ route }) => {
       return;
     }
 
-    // Create the event in the calendar
     const eventId = await Calendar.createEventAsync(defaultCalendar.id, {
       title: eventDetails.title,
       startDate: eventDetails.startDate,
@@ -211,7 +208,7 @@ const ProfileDetailsScreen = ({ route }) => {
       setPackageUnapplicable(package_unapplicable);
       setMaxSlots(selectedGig.remaining_slots);
       setSelectedGigInstanceId(gigInstanceId);
-      setSelectedGigDetails(selectedGig); // Save the entire gig object for later use
+      setSelectedGigDetails(selectedGig); 
       setBookingModalVisible(true);
     }
   };
@@ -318,7 +315,6 @@ const ProfileDetailsScreen = ({ route }) => {
   };
 
   useEffect(() => {
-    // Check if the user is subscribed to the current provider
     const checkIsSubscribedToProvider = subscriptions.some(sub => sub.package.owner === providerId);
     setIsSubscribedToProvider(checkIsSubscribedToProvider);
 
@@ -331,14 +327,10 @@ const ProfileDetailsScreen = ({ route }) => {
     
   }, [subscriptions, providerId]);
   
- 
-
   useEffect(() => {
-     // Assuming `subscriptions` is the array of subscription objects you fetched
-
-    
-    fetchUpcomingGigs(); // Call this function on component mount
+    fetchUpcomingGigs();
   }, [providerId]);
+
 
   const getMonthsFromGigs = (gigs) => {
     const months = {};

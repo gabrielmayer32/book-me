@@ -12,6 +12,8 @@ import MapView, { Marker } from 'react-native-maps';
 import {BACKEND_URL} from '../../utils/constants/';
 
 import moment from 'moment';
+import { useTheme } from 'react-native-paper';
+
 
      
 
@@ -22,7 +24,8 @@ const GigItemBis = React.memo(({ gig, address, title, maxPeople }) => {
     const [editableStartTime, setEditableStartTime] = useState(adjustTimeToUTC4(gig.start_time).format('HH:mm'));
     const [editableEndTime, setEditableEndTime] = useState(adjustTimeToUTC4(gig.end_time).format('HH:mm'));
     const [editableMaxPeople, setEditableMaxPeople] = useState(gig.max_people);
-    
+    const { colors } = useTheme(); // Accessing the theme
+
    
     const [isStartTimePickerVisible, setStartTimePickerVisibility] = useState(false);
     const [isEndTimePickerVisible, setEndTimePickerVisibility] = useState(false);
@@ -157,27 +160,27 @@ const GigItemBis = React.memo(({ gig, address, title, maxPeople }) => {
                         <Text style={styles.gigTitle}>{title}</Text>
                     </View>
                     <View style={styles.detailRow}>
-                        <Icon name="map-marker" size={20} color="#4F8EF7" />
+                        <Icon name="map-marker" size={20} color={colors.info} />
                         <Text style={styles.detailText}>{editableAddress}</Text>
                     </View>
                     <View style={styles.detailRow}>
-                        <Icon name="calendar" size={20} color="#4F8EF7" />
+                        <Icon name="calendar" size={20} color={colors.info} />
                         <Text style={styles.detailText}>{editableDate}</Text>
                     </View>
                     <View style={styles.detailRow}>
-                        <Icon name="clock-start" size={20} color="#4F8EF7" />
+                        <Icon name="clock-start" size={20} color={colors.info} />
                         <Text style={styles.detailText}>{editableStartTime}</Text>
                     </View>
                     <View style={styles.detailRow}>
-                        <Icon name="clock-end" size={20} color="#4F8EF7" />
+                        <Icon name="clock-end" size={20} color={colors.info} />
                         <Text style={styles.detailText}>{editableEndTime}</Text>
                     </View>
                     <View style={styles.detailRow}>
-                        <Icon name="account" size={20} color="#4F8EF7" />
+                        <Icon name="account" size={20} color={colors.info} />
                         <Text style={styles.detailText}>{editableMaxPeople}</Text>
                     </View>
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: 100, height: 40, borderRadius: 20, overflow: 'hidden' }}>
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', height:100 }}>
+                        {/* <View style={{ width: 100, height: 40, borderRadius: 20, overflow: 'hidden' }}>
                             <Button
                         icon="pencil"
                                 mode="contained"
@@ -186,13 +189,13 @@ const GigItemBis = React.memo(({ gig, address, title, maxPeople }) => {
                             >
                                 Edit
                             </Button>
-                        </View>
-                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 10 }}>
+                        </View> */}
+                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 5 }}>
                 <Button
                     icon="delete"
                     mode="contained"
                     onPress={handleDelete}
-                    style={{ backgroundColor: 'red' }} // Example styling
+                    style={{ backgroundColor: 'red', width: '80%', height: 40 }} // Example styling
                 >
                     Delete
                 </Button>

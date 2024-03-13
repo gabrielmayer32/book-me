@@ -10,6 +10,7 @@ import {Button, TextInput} from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import  Theme from '../theme/theme';
 import {  Platform } from 'react-native';
+import { Switch } from 'react-native';
 
 import * as Device from 'expo-device';
 
@@ -47,6 +48,24 @@ const LoginScreen = ({ navigation }) => {
   const responseListener = useRef();  
   const { setUserInfo, fetchNotificationsCount } = useUser();
   const [user, setUser] = useState(null);
+
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    const loadCredentials = async () => {
+      const storedCredentials = await AsyncStorage.getItem('credentials');
+      if (storedCredentials) {
+        const { username, password } = JSON.parse(storedCredentials);
+        setUsername(username);
+        setPassword(password);
+        setRememberMe(true); // Automatically toggle Remember Me if credentials are stored
+      }
+    };
+  
+    loadCredentials();
+  }, []);
+  
+
   useEffect(() => {
     registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
 
@@ -87,6 +106,12 @@ const LoginScreen = ({ navigation }) => {
   
       const result = await response.json();
       if (result.success && result.user) {
+        if (rememberMe) {
+          await AsyncStorage.setItem('credentials', JSON.stringify({ username, password }));
+        } else {
+          // Ensure any existing saved credentials are cleared if Remember Me is not selected
+          await AsyncStorage.removeItem('credentials');
+        }
         setUserInfo(result.user);
         fetchNotificationsCount(); // Fetch notifications count right after setting user info
         // Ensure the expoPushToken is not null or undefined before attempting to send it
@@ -156,7 +181,7 @@ const LoginScreen = ({ navigation }) => {
       token = (await Notifications.getExpoPushTokenAsync({ projectId: 'cab1a67b-dd94-4b1f-a03a-121ab6e4007e',})).data;
       console.log(token);
     } else {
-      alert('Must use physical device for Push Notifications');
+      // alert('Must use physical device for Push Notifications');
     }
   
     return token;
@@ -290,14 +315,25 @@ const LoginScreen = ({ navigation }) => {
           mode="outlined"
           theme={{ colors: { primary: '#4F8EF7', underlineColor: 'transparent', } }}
         />
-                    <TouchableOpacity 
-              onPress={() => navigation.navigate('ForgotPassword')} // Adjust navigation as needed
-              style={styles.forgotPasswordButton}
-            >
-              <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-            </TouchableOpacity>
+                   <View style={styles.actionRow}>
+  <View style={styles.rememberMeContainer}>
+    <Text style={styles.rememberMeText}>Remember Me</Text>
+    <Switch
+      value={rememberMe}
+      onValueChange={setRememberMe}
+      color="#4F8EF7"
+      style={styles.rememberMeSwitch}
+    />
+  </View>
+  <TouchableOpacity 
+    onPress={() => navigation.navigate('ForgotPassword')} // Adjust navigation as needed
+    style={styles.forgotPasswordButton}
+  >
+    <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+  </TouchableOpacity>
+</View>
 
-              </View>
+</View>
 
       <Button mode="contained" onPress={handleLogin} style={styles.button}>
         Login
@@ -308,9 +344,8 @@ const LoginScreen = ({ navigation }) => {
       <Button icon="google" mode="outlined" onPress={handleGoogleSignIn} style={styles.button}>
         Continue with Google
       </Button>
-      <Button icon="apple" mode="outlined" onPress={() => console.log('Login with Apple')} style={styles.button}>
-        Continue with Apple
-      </Button>
+
+     
     </View>
     </LinearGradient>
 
@@ -324,6 +359,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10, // Adjust as needed
+  },
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rememberMeText: {
+    marginRight: 5, // Space between text and switch
+    // Any additional styling for the text
+  },
+  rememberMeSwitch: {
+    transform: [{ scaleX: .8 }, { scaleY: .8 }], // Scale down the switch
   },
   inputContainer: {
     width: '100%',

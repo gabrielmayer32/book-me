@@ -336,19 +336,19 @@ const styles = StyleSheet.create({
     price : {
       fontWeight: 'bold',
       fontSize: 22,
-      marginBottom: 5,
+      marginBottom: 8,
     },
     packageName: {
       fontWeight: 'bold',
       fontSize: 20,
       textAlign: 'center',
-      marginBottom: 10,
+      marginBottom: 20,
     },
     button: {
     alignContent: 'center',
     alignItems: 'center',
       marginTop: 10,
-      backgroundColor: '#007bff',
+      backgroundColor: '#65A77E',
       paddingVertical: 10,
       paddingHorizontal: 20,
       borderRadius: 5,

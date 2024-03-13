@@ -63,33 +63,24 @@ class BookGigView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        print(request.data)
         gig_instance_id = request.data.get('gig_instance_id')
+        number_of_slots = request.data.get('number_of_slots')
         try:
             gig_instance = GigInstance.objects.get(id=gig_instance_id)
             if gig_instance.is_fully_booked:
                 return Response({'error': 'This gig is fully booked.'}, status=400)
             
-            # Check if the user has an active subscription
-            subscription = PackageSubscription.objects.filter(
-                user=request.user, 
-                package__owner=gig_instance.gig.provider, 
-                status='confirmed',
-                number_of_bookings__gt=0  # Ensure there's at least one booking left
-            ).first()
-            
+          
             with transaction.atomic():
-                if subscription:
-                   
-                
-                    verb = 'used 1 booking from their package'
-                else:
-                    verb = 'booked a slot'
+                verb = 'booked'
                 
                 # Create the booking
                 booking = Booking.objects.create(
                     user=request.user,
                     gig_instance=gig_instance,
                     event_id=request.data.get('event_id'),
+                    number_of_slots=number_of_slots,
                     status=Booking.StatusChoices.PENDING,
                 )
                 

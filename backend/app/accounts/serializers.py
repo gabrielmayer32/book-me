@@ -52,10 +52,6 @@ class CustomLoginUserSerializer(serializers.ModelSerializer):
 # serializers.py
 from rest_framework import serializers
 from .models import Package
-class PackageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Package
-        fields = '__all__' 
 
 # serializers.py
 from rest_framework import serializers
@@ -71,6 +67,7 @@ class SubscriberSerializer(serializers.ModelSerializer):
     def get_subscription_details(self, obj):
         # Here, use 'obj' instead of 'user' to clarify it's the object being serialized
         subscription = PackageSubscription.objects.filter(user=obj, status='confirmed').first()
+
         if subscription:
             return {
                 'remaining_bookings': subscription.package.number_of_bookings - subscription.bookings_made,
@@ -83,11 +80,10 @@ class SubscriberSerializer(serializers.ModelSerializer):
 from django.contrib.humanize.templatetags.humanize import intcomma
 
 
-
 class PackageSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source='owner.id')
     subscribers = serializers.SerializerMethodField()
-    number_of_bookings = serializers.ReadOnlyField()  
+    # Removed number_of_bookings from ReadOnlyField to make it writable
     formatted_price = serializers.SerializerMethodField()
 
     class Meta:
@@ -96,12 +92,13 @@ class PackageSerializer(serializers.ModelSerializer):
 
     def get_subscribers(self, obj):
         subscriptions = PackageSubscription.objects.filter(package=obj, status='confirmed')
-        subscribers = [subscription.user for subscription in subscriptions]  # Collect User instances
-        return SubscriberSerializer(subscribers, many=True).data  # Seri
+        subscribers = [subscription.user for subscription in subscriptions]
+        return SubscriberSerializer(subscribers, many=True).data
     
     def get_formatted_price(self, obj):
         # Format the price with commas for thousands
         return intcomma(obj.price)
+
 
 from rest_framework import serializers
 

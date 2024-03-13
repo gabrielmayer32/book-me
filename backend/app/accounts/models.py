@@ -115,7 +115,7 @@ class Package(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     duration = models.IntegerField(validators=[MinValueValidator(1)], help_text="Duration in days.")
-    number_of_bookings = models.IntegerField(validators=[MinValueValidator(0)], null=True, blank=True, help_text="Number of bookings allowed")
+    number_of_bookings = models.IntegerField(default=0) 
     price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -140,7 +140,7 @@ class PackageSubscription(models.Model):
     def __str__(self):
         return f"{self.user} subscribed to {self.package} on {self.start_date}"
     def calculate_remaining_bookings(self):
-        total_bookings_allowed = self.package.number_of_bookings
+        total_bookings_allowed = self.package.number_of_bookings or 0  # Provide a default of 0 if None
         bookings_made = self.bookings.count()  # Assuming you have a related name 'bookings' in the Booking model
         return total_bookings_allowed - bookings_made
     

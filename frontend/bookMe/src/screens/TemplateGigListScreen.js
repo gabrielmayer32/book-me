@@ -9,8 +9,11 @@ import { BACKEND_URL } from '../../utils/constants';
 
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
+import { useTheme } from 'react-native-paper';
 
 const TemplatesScreen = ({ route, navigation }) => {
+  const { colors } = useTheme(); // Accessing the theme
+
     const { userInfo } = useUser();
     const [templates, setTemplates] = useState([]);
     const handleDeleteTemplate = async (templateId) => {
@@ -87,7 +90,7 @@ const SwipeableTemplateItem = ({ item, onDelete, navigation }) => {
     return (
       <Swipeable renderRightActions={renderRightActions}>
         <TouchableOpacity style={styles.itemContainer} onPress={() => handleTemplatePress(item)}>
-          <Icon name="file-document-outline" size={24} color="#4F8EF7" />
+          <Icon name="file-document-outline" size={24} color={colors.info} />
           <View style={styles.textContainer}>
             <Text style={styles.itemTitle}>{item.title}</Text>
             <Text style={styles.itemDescription} numberOfLines={2}>{item.description}</Text>

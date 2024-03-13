@@ -6,9 +6,11 @@ const Theme = {
     roundness: 2,
     colors: {
       ...DefaultTheme.colors,
-      primary: '#424874',
+      primary: '#656CA7',
       accent: '#f1c40f',
       secondary: '#744248',
+      info: '#A7658E', 
+      button: '#65A77E'
     },
   };
 

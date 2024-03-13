@@ -606,13 +606,20 @@ from .serializers import PackageSubscriptionSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
 class UserPackageSubscriptionsView(APIView):
     def get(self, request, user_id, format=None):
         print("User ID:", user_id)  # Debug print
 
-        # Fetching subscriptions for the logged-in user
-        subscriptions = PackageSubscription.objects.filter(user=user_id).select_related('package', 'package__owner')
+        # Ensure the user exists and matches the logged-in user or the user has permission to view
+        user = get_object_or_404(User, pk=user_id)
+        if request.user != user and not request.user.is_staff:
+            return Response({"error": "You do not have permission to view these subscriptions."}, status=403)
+
+        # Fetching confirmed subscriptions for the user
+        subscriptions = PackageSubscription.objects.filter(
+            user=user_id,
+            status='confirmed'  # Filter by confirmed status
+        ).select_related('package', 'package__owner')
 
         print("Subscriptions QuerySet:", subscriptions)  # Debug print to see if queryset is empty or contains data
 

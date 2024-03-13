@@ -9,6 +9,7 @@ import moment from 'moment'; // Import moment
 import { useUser } from '../UserContext';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Assuming you're using MaterialCommunityIcons
+import AnimatedLoader from 'react-native-animated-loader';
 
          
 
